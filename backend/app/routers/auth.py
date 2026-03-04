@@ -1,7 +1,10 @@
 """Authentication endpoints."""
+import re
+import uuid
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
 from app.models import User, Organization
@@ -25,8 +28,21 @@ async def register(
             detail="Email already registered"
         )
     
+    # Generate unique organization slug
+    base_slug = re.sub(r'[^a-z0-9-]', '', request.organization_name.lower().replace(" ", "-"))
+    org_slug = base_slug
+    
+    # Check for slug conflicts and generate unique slug
+    attempt = 0
+    while attempt < 10:
+        result = await db.execute(select(Organization).where(Organization.slug == org_slug))
+        if not result.scalar_one_or_none():
+            break
+        # Add random suffix if slug exists
+        org_slug = f"{base_slug}-{uuid.uuid4().hex[:6]}"
+        attempt += 1
+    
     # Create organization
-    org_slug = request.organization_name.lower().replace(" ", "-")
     organization = Organization(
         name=request.organization_name,
         slug=org_slug
