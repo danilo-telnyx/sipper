@@ -1,6 +1,6 @@
 import { io, Socket } from 'socket.io-client'
-import type { TestProgress, TestLog } from '@/types'
-import { useAuthStore } from '@/store/auth'
+import type { TestProgress, TestLog } from '../types/index'
+import { useAuthStore } from '../store/auth'
 import { testsApi } from './api'
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'

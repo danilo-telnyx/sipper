@@ -1,12 +1,23 @@
 """Application configuration."""
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import computed_field
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
-    # Database
-    database_url: str = "postgresql+asyncpg://sipper:sipper@localhost:5432/sipper"
+    # Database components
+    db_host: str = "localhost"
+    db_port: int = 5432
+    db_user: str = "sipper"
+    db_password: str = "sipper"
+    db_name: str = "sipper"
+    
+    @computed_field
+    @property
+    def database_url(self) -> str:
+        """Build database URL from components."""
+        return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
     
     # Security
     jwt_secret: str

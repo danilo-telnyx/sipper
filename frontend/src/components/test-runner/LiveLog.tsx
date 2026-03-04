@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { Terminal, Info, AlertTriangle, XCircle, Bug } from 'lucide-react'
-import { cn } from '@/lib/utils'
-import type { TestLog } from '@/types'
+import { cn } from '../../lib/utils'
+import type { TestLog } from '../../types/index'
 
 interface LiveLogProps {
   logs: TestLog[]

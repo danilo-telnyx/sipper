@@ -20,7 +20,7 @@ class TestRun(Base):
     started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
     completed_at = Column(DateTime)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
-    metadata = Column(JSONB, default={}, nullable=False)
+    test_metadata = Column(JSONB, default={}, nullable=False)
     
     # Relationships
     organization = relationship("Organization", back_populates="test_runs")

@@ -44,6 +44,8 @@ services:
       APP_ENV: ${APP_ENV:-production}
       LOG_LEVEL: ${LOG_LEVEL:-info}
       SECRET_KEY: ${SECRET_KEY:?Secret key required}
+      JWT_SECRET: ${JWT_SECRET:?JWT secret required}
+      ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Encryption key required}
       
       # Optional: Telnyx Integration
       TELNYX_API_KEY: ${TELNYX_API_KEY:-}

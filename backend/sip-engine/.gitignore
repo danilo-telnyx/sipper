@@ -1,0 +1,23 @@
+node_modules/
+*.log
+.env
+.DS_Store
+*.swp
+*.swo
+*~
+coverage/
+.nyc_output/
+dist/
+build/
+.idea/
+.vscode/
+*.tgz
+package-lock.json
+
+# Test results
+test-results/
+*.pcap
+
+# Local config
+config.local.json
+credentials.json

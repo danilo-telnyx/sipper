@@ -1,0 +1,265 @@
+{
+  "scenarios": [
+    {
+      "name": "Telnyx Registration - US East",
+      "description": "Register SIP endpoint with Telnyx US East region",
+      "config": {
+        "endpoint": {
+          "host": "sip.telnyx.com",
+          "port": 5060,
+          "domain": "sip.telnyx.com",
+          "username": "${TELNYX_SIP_USERNAME}",
+          "password": "${TELNYX_SIP_PASSWORD}",
+          "region": "us-east"
+        },
+        "test": {
+          "type": "registration",
+          "timeout": 10000,
+          "expectedResult": "200 OK after authentication"
+        }
+      }
+    },
+    {
+      "name": "Telnyx Outbound Call - E.164",
+      "description": "Place outbound call to E.164 number via Telnyx",
+      "config": {
+        "endpoint": {
+          "host": "sip.telnyx.com",
+          "port": 5060,
+          "domain": "sip.telnyx.com",
+          "username": "${TELNYX_SIP_USERNAME}",
+          "password": "${TELNYX_SIP_PASSWORD}",
+          "targetNumber": "+15551234567"
+        },
+        "test": {
+          "type": "outbound-call",
+          "timeout": 30000,
+          "expectedResult": "Call initiated (100/180/183 or 200)"
+        }
+      }
+    },
+    {
+      "name": "Telnyx OPTIONS Keepalive",
+      "description": "Send OPTIONS ping to Telnyx endpoint",
+      "config": {
+        "endpoint": {
+          "host": "sip.telnyx.com",
+          "port": 5060,
+          "domain": "sip.telnyx.com"
+        },
+        "test": {
+          "type": "options-ping",
+          "timeout": 5000,
+          "expectedResult": "200 OK",
+          "interval": 30000,
+          "keepalive": true
+        }
+      }
+    },
+    {
+      "name": "Telnyx Auth Flow Test",
+      "description": "Test Digest authentication with Telnyx",
+      "config": {
+        "endpoint": {
+          "host": "sip.telnyx.com",
+          "port": 5060,
+          "domain": "sip.telnyx.com",
+          "username": "${TELNYX_SIP_USERNAME}",
+          "password": "${TELNYX_SIP_PASSWORD}"
+        },
+        "test": {
+          "type": "auth-challenge",
+          "timeout": 10000,
+          "expectedResult": "401 with WWW-Authenticate, then 200 OK"
+        }
+      }
+    },
+    {
+      "name": "Telnyx Multi-Region Latency Test",
+      "description": "Test latency across all Telnyx regions",
+      "config": {
+        "endpoints": [
+          {
+            "name": "US East",
+            "host": "sip.telnyx.com",
+            "port": 5060
+          },
+          {
+            "name": "US West",
+            "host": "sip-us-west.telnyx.com",
+            "port": 5060
+          },
+          {
+            "name": "Europe",
+            "host": "sip-eu.telnyx.com",
+            "port": 5060
+          },
+          {
+            "name": "Australia",
+            "host": "sip-au.telnyx.com",
+            "port": 5060
+          }
+        ],
+        "test": {
+          "type": "options-ping",
+          "timeout": 5000,
+          "iterations": 10,
+          "metric": "average-response-time"
+        }
+      }
+    },
+    {
+      "name": "Telnyx Error Handling - Invalid Number",
+      "description": "Test error response for invalid destination number",
+      "config": {
+        "endpoint": {
+          "host": "sip.telnyx.com",
+          "port": 5060,
+          "domain": "sip.telnyx.com",
+          "username": "${TELNYX_SIP_USERNAME}",
+          "password": "${TELNYX_SIP_PASSWORD}",
+          "targetNumber": "+1000000000"
+        },
+        "test": {
+          "type": "error-handling",
+          "timeout": 10000,
+          "expectedResult": "404 Not Found or 484 Address Incomplete"
+        }
+      }
+    },
+    {
+      "name": "Telnyx Codec Negotiation",
+      "description": "Test SDP codec negotiation with Telnyx",
+      "config": {
+        "endpoint": {
+          "host": "sip.telnyx.com",
+          "port": 5060,
+          "domain": "sip.telnyx.com",
+          "username": "${TELNYX_SIP_USERNAME}",
+          "password": "${TELNYX_SIP_PASSWORD}",
+          "targetNumber": "+15551234567"
+        },
+        "sdp": {
+          "codecs": ["PCMU", "PCMA", "G722"],
+          "ptime": 20,
+          "dtmf": "RFC2833"
+        },
+        "test": {
+          "type": "codec-negotiation",
+          "timeout": 30000,
+          "expectedResult": "200 OK with accepted codec in SDP"
+        }
+      }
+    },
+    {
+      "name": "Telnyx Re-Registration Test",
+      "description": "Test periodic re-registration before expiry",
+      "config": {
+        "endpoint": {
+          "host": "sip.telnyx.com",
+          "port": 5060,
+          "domain": "sip.telnyx.com",
+          "username": "${TELNYX_SIP_USERNAME}",
+          "password": "${TELNYX_SIP_PASSWORD}"
+        },
+        "registration": {
+          "expires": 1800,
+          "reregisterBefore": 60
+        },
+        "test": {
+          "type": "re-registration",
+          "timeout": 10000,
+          "iterations": 3,
+          "expectedResult": "200 OK on each re-registration"
+        }
+      }
+    },
+    {
+      "name": "Telnyx Load Test - Concurrent Registrations",
+      "description": "Test concurrent SIP registrations",
+      "config": {
+        "endpoint": {
+          "host": "sip.telnyx.com",
+          "port": 5060,
+          "domain": "sip.telnyx.com"
+        },
+        "test": {
+          "type": "load-test",
+          "concurrentSessions": 10,
+          "timeout": 15000,
+          "expectedResult": "All registrations succeed"
+        },
+        "accounts": [
+          {
+            "username": "${TELNYX_SIP_USERNAME_1}",
+            "password": "${TELNYX_SIP_PASSWORD_1}"
+          }
+        ]
+      }
+    },
+    {
+      "name": "Telnyx Call Hold/Resume",
+      "description": "Test call hold and resume (re-INVITE)",
+      "config": {
+        "endpoint": {
+          "host": "sip.telnyx.com",
+          "port": 5060,
+          "domain": "sip.telnyx.com",
+          "username": "${TELNYX_SIP_USERNAME}",
+          "password": "${TELNYX_SIP_PASSWORD}",
+          "targetNumber": "+15551234567"
+        },
+        "test": {
+          "type": "call-hold-resume",
+          "timeout": 30000,
+          "holdDuration": 5000,
+          "expectedResult": "200 OK on re-INVITE for hold and resume"
+        }
+      }
+    }
+  ],
+  "environment": {
+    "variables": [
+      {
+        "name": "TELNYX_SIP_USERNAME",
+        "description": "Telnyx SIP Connection username",
+        "required": true,
+        "source": "Telnyx Portal → SIP Connections → Credentials"
+      },
+      {
+        "name": "TELNYX_SIP_PASSWORD",
+        "description": "Telnyx SIP Connection password",
+        "required": true,
+        "source": "Telnyx Portal → SIP Connections → Credentials"
+      },
+      {
+        "name": "TELNYX_REGION",
+        "description": "Telnyx region (us-east, us-west, eu, au)",
+        "required": false,
+        "default": "us-east"
+      }
+    ]
+  },
+  "bestPractices": {
+    "registration": {
+      "expires": 1800,
+      "reregisterBefore": 60,
+      "note": "Re-register 60 seconds before expiry to avoid gaps"
+    },
+    "keepalive": {
+      "method": "OPTIONS",
+      "interval": 30,
+      "note": "Send OPTIONS every 30 seconds to maintain NAT bindings"
+    },
+    "codecs": {
+      "recommended": ["PCMU", "PCMA", "G722"],
+      "dtmf": "RFC2833 (telephone-event/8000)",
+      "ptime": 20
+    },
+    "transport": {
+      "recommended": "UDP",
+      "port": 5060,
+      "note": "TCP and TLS also supported by Telnyx"
+    }
+  }
+}

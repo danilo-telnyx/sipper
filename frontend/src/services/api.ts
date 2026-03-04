@@ -1,4 +1,4 @@
-import axiosInstance from '@/lib/axios'
+import axiosInstance from '../lib/axios'
 import type {
   ApiResponse,
   PaginatedResponse,
@@ -13,7 +13,7 @@ import type {
   TestResult,
   DashboardStats,
   ExportRequest,
-} from '@/types'
+} from '../types/index'
 
 // Auth API
 export const authApi = {
