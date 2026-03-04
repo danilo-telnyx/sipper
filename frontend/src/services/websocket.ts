@@ -1,12 +1,20 @@
 import { io, Socket } from 'socket.io-client'
-import type { TestProgress } from '@/types'
+import type { TestProgress, TestLog } from '@/types'
 import { useAuthStore } from '@/store/auth'
+import { testsApi } from './api'
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
+const RECONNECT_ATTEMPTS = 5
+const RECONNECT_DELAY = 1000
+const POLLING_INTERVAL = 2000
 
 class WebSocketService {
   private socket: Socket | null = null
   private listeners: Map<string, Set<(data: any) => void>> = new Map()
+  private reconnectAttempts = 0
+  private isConnected = false
+  private shouldUsePolling = false
+  private pollingIntervals: Map<string, NodeJS.Timeout> = new Map()
 
   connect() {
     if (this.socket?.connected) return
@@ -14,24 +22,57 @@ class WebSocketService {
     const token = useAuthStore.getState().token
     if (!token) {
       console.warn('No auth token available for WebSocket connection')
+      this.enablePollingFallback()
       return
     }
 
-    this.socket = io(WS_URL, {
-      auth: { token },
-      transports: ['websocket'],
-      reconnection: true,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      reconnectionAttempts: 5,
-    })
+    try {
+      this.socket = io(WS_URL, {
+        auth: { token },
+        transports: ['websocket'],
+        reconnection: true,
+        reconnectionDelay: RECONNECT_DELAY,
+        reconnectionDelayMax: 5000,
+        reconnectionAttempts: RECONNECT_ATTEMPTS,
+      })
+
+      this.setupSocketListeners()
+    } catch (error) {
+      console.error('Failed to establish WebSocket connection:', error)
+      this.enablePollingFallback()
+    }
+  }
+
+  private setupSocketListeners() {
+    if (!this.socket) return
 
     this.socket.on('connect', () => {
       console.log('WebSocket connected')
+      this.isConnected = true
+      this.reconnectAttempts = 0
+      this.shouldUsePolling = false
+      this.stopAllPolling()
     })
 
-    this.socket.on('disconnect', () => {
-      console.log('WebSocket disconnected')
+    this.socket.on('disconnect', (reason) => {
+      console.log('WebSocket disconnected:', reason)
+      this.isConnected = false
+      
+      // If disconnect was unexpected, enable polling fallback
+      if (reason === 'io server disconnect' || reason === 'transport close') {
+        this.enablePollingFallback()
+      }
+    })
+
+    this.socket.on('connect_error', (error) => {
+      console.error('WebSocket connection error:', error)
+      this.reconnectAttempts++
+      
+      // If we've exceeded reconnect attempts, fall back to polling
+      if (this.reconnectAttempts >= RECONNECT_ATTEMPTS) {
+        console.warn('Max reconnection attempts reached, falling back to polling')
+        this.enablePollingFallback()
+      }
     })
 
     this.socket.on('error', (error) => {
@@ -39,18 +80,25 @@ class WebSocketService {
     })
 
     // Test progress updates
-    this.socket.on('test:progress', (data: TestProgress) => {
+    this.socket.on('test:progress', (data: TestProgress & { logs?: TestLog[] }) => {
       this.emit('test:progress', data)
+    })
+
+    // Test logs
+    this.socket.on('test:log', (data: TestLog) => {
+      this.emit('test:log', data)
     })
 
     // Test completed
     this.socket.on('test:completed', (data: { testId: string }) => {
       this.emit('test:completed', data)
+      this.stopPollingForTest(data.testId)
     })
 
     // Test failed
     this.socket.on('test:failed', (data: { testId: string; error: string }) => {
       this.emit('test:failed', data)
+      this.stopPollingForTest(data.testId)
     })
   }
 
@@ -59,7 +107,9 @@ class WebSocketService {
       this.socket.disconnect()
       this.socket = null
     }
+    this.stopAllPolling()
     this.listeners.clear()
+    this.isConnected = false
   }
 
   subscribe<T = any>(event: string, callback: (data: T) => void) {
@@ -88,6 +138,11 @@ class WebSocketService {
   }
 
   subscribeToTest(testId: string, callback: (progress: TestProgress) => void) {
+    // If polling is enabled, start polling for this test
+    if (this.shouldUsePolling) {
+      this.startPollingForTest(testId)
+    }
+
     return this.subscribe<TestProgress>('test:progress', (data) => {
       if (data.testId === testId) {
         callback(data)
@@ -102,6 +157,80 @@ class WebSocketService {
   onTestFailed(callback: (data: { testId: string; error: string }) => void) {
     return this.subscribe('test:failed', callback)
   }
+
+  onTestLog(callback: (log: TestLog) => void) {
+    return this.subscribe('test:log', callback)
+  }
+
+  // Polling fallback mechanism
+  private enablePollingFallback() {
+    this.shouldUsePolling = true
+    console.log('WebSocket fallback: Using HTTP polling for real-time updates')
+  }
+
+  private async startPollingForTest(testId: string) {
+    if (this.pollingIntervals.has(testId)) return
+
+    const poll = async () => {
+      try {
+        const response = await testsApi.getProgress(testId)
+        if (response.data) {
+          this.emit('test:progress', response.data)
+
+          // Check if test is complete
+          if (response.data.status === 'completed') {
+            this.emit('test:completed', { testId })
+            this.stopPollingForTest(testId)
+          } else if (response.data.status === 'failed') {
+            this.emit('test:failed', { 
+              testId, 
+              error: response.data.message || 'Test failed' 
+            })
+            this.stopPollingForTest(testId)
+          }
+        }
+      } catch (error) {
+        console.error('Polling error for test', testId, error)
+      }
+    }
+
+    // Initial poll
+    await poll()
+
+    // Set up interval
+    const interval = setInterval(poll, POLLING_INTERVAL)
+    this.pollingIntervals.set(testId, interval)
+  }
+
+  private stopPollingForTest(testId: string) {
+    const interval = this.pollingIntervals.get(testId)
+    if (interval) {
+      clearInterval(interval)
+      this.pollingIntervals.delete(testId)
+    }
+  }
+
+  private stopAllPolling() {
+    this.pollingIntervals.forEach((interval) => clearInterval(interval))
+    this.pollingIntervals.clear()
+  }
+
+  isUsingPolling(): boolean {
+    return this.shouldUsePolling
+  }
+
+  getConnectionStatus(): 'connected' | 'disconnected' | 'polling' {
+    if (this.isConnected) return 'connected'
+    if (this.shouldUsePolling) return 'polling'
+    return 'disconnected'
+  }
 }
 
 export const wsService = new WebSocketService()
+
+// Add API method for polling
+declare module './api' {
+  interface TestsApi {
+    getProgress(testId: string): Promise<{ data?: TestProgress }>
+  }
+}

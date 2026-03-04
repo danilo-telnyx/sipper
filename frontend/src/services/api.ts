@@ -1,4 +1,4 @@
-import { useAuthStore } from '@/store/auth'
+import axiosInstance from '@/lib/axios'
 import type {
   ApiResponse,
   PaginatedResponse,
@@ -15,179 +15,213 @@ import type {
   ExportRequest,
 } from '@/types'
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api'
-
-class ApiError extends Error {
-  constructor(public status: number, message: string) {
-    super(message)
-    this.name = 'ApiError'
-  }
-}
-
-async function request<T>(
-  endpoint: string,
-  options: RequestInit = {}
-): Promise<T> {
-  const token = useAuthStore.getState().token
-
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-    ...options.headers,
-  }
-
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`
-  }
-
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  })
-
-  if (response.status === 401) {
-    useAuthStore.getState().clearAuth()
-    window.location.href = '/login'
-    throw new ApiError(401, 'Unauthorized')
-  }
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'An error occurred' }))
-    throw new ApiError(response.status, error.error || error.message || 'An error occurred')
-  }
-
-  return response.json()
-}
-
 // Auth API
 export const authApi = {
-  login: (data: LoginRequest) =>
-    request<ApiResponse<AuthResponse>>('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  login: async (data: LoginRequest) => {
+    const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
+      '/auth/login',
+      data
+    )
+    return response.data
+  },
 
-  register: (data: RegisterRequest) =>
-    request<ApiResponse<AuthResponse>>('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  register: async (data: RegisterRequest) => {
+    const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
+      '/auth/register',
+      data
+    )
+    return response.data
+  },
 
-  logout: () =>
-    request<ApiResponse<void>>('/auth/logout', {
-      method: 'POST',
-    }),
+  logout: async () => {
+    const response = await axiosInstance.post<ApiResponse<void>>('/auth/logout')
+    return response.data
+  },
 
-  refreshToken: (refreshToken: string) =>
-    request<ApiResponse<{ token: string }>>('/auth/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken }),
-    }),
+  refreshToken: async (refreshToken: string) => {
+    const response = await axiosInstance.post<
+      ApiResponse<{ token: string }>
+    >('/auth/refresh', { refreshToken })
+    return response.data
+  },
 
-  me: () => request<ApiResponse<User>>('/auth/me'),
+  me: async () => {
+    const response = await axiosInstance.get<ApiResponse<User>>('/auth/me')
+    return response.data
+  },
 }
 
 // Users API
 export const usersApi = {
-  list: (params?: { page?: number; pageSize?: number; search?: string }) =>
-    request<PaginatedResponse<User>>(
-      `/users?${new URLSearchParams(params as any).toString()}`
-    ),
+  list: async (params?: {
+    page?: number
+    pageSize?: number
+    search?: string
+  }) => {
+    const response = await axiosInstance.get<PaginatedResponse<User>>(
+      '/users',
+      { params }
+    )
+    return response.data
+  },
 
-  get: (id: string) => request<ApiResponse<User>>(`/users/${id}`),
+  get: async (id: string) => {
+    const response = await axiosInstance.get<ApiResponse<User>>(`/users/${id}`)
+    return response.data
+  },
 
-  create: (data: Partial<User>) =>
-    request<ApiResponse<User>>('/users', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  create: async (data: Partial<User>) => {
+    const response = await axiosInstance.post<ApiResponse<User>>(
+      '/users',
+      data
+    )
+    return response.data
+  },
 
-  update: (id: string, data: Partial<User>) =>
-    request<ApiResponse<User>>(`/users/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+  update: async (id: string, data: Partial<User>) => {
+    const response = await axiosInstance.put<ApiResponse<User>>(
+      `/users/${id}`,
+      data
+    )
+    return response.data
+  },
 
-  delete: (id: string) =>
-    request<ApiResponse<void>>(`/users/${id}`, {
-      method: 'DELETE',
-    }),
+  delete: async (id: string) => {
+    const response = await axiosInstance.delete<ApiResponse<void>>(
+      `/users/${id}`
+    )
+    return response.data
+  },
 }
 
 // Organization API
 export const organizationApi = {
-  get: () => request<ApiResponse<Organization>>('/organization'),
+  get: async () => {
+    const response = await axiosInstance.get<ApiResponse<Organization>>(
+      '/organization'
+    )
+    return response.data
+  },
 
-  update: (data: Partial<Organization>) =>
-    request<ApiResponse<Organization>>('/organization', {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+  update: async (data: Partial<Organization>) => {
+    const response = await axiosInstance.put<ApiResponse<Organization>>(
+      '/organization',
+      data
+    )
+    return response.data
+  },
 }
 
 // Credentials API
 export const credentialsApi = {
-  list: () => request<ApiResponse<SipCredential[]>>('/credentials'),
+  list: async () => {
+    const response = await axiosInstance.get<ApiResponse<SipCredential[]>>(
+      '/credentials'
+    )
+    return response.data
+  },
 
-  get: (id: string) => request<ApiResponse<SipCredential>>(`/credentials/${id}`),
+  get: async (id: string) => {
+    const response = await axiosInstance.get<ApiResponse<SipCredential>>(
+      `/credentials/${id}`
+    )
+    return response.data
+  },
 
-  create: (data: CreateCredentialRequest) =>
-    request<ApiResponse<SipCredential>>('/credentials', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  create: async (data: CreateCredentialRequest) => {
+    const response = await axiosInstance.post<ApiResponse<SipCredential>>(
+      '/credentials',
+      data
+    )
+    return response.data
+  },
 
-  update: (id: string, data: Partial<CreateCredentialRequest>) =>
-    request<ApiResponse<SipCredential>>(`/credentials/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    }),
+  update: async (id: string, data: Partial<CreateCredentialRequest>) => {
+    const response = await axiosInstance.put<ApiResponse<SipCredential>>(
+      `/credentials/${id}`,
+      data
+    )
+    return response.data
+  },
 
-  delete: (id: string) =>
-    request<ApiResponse<void>>(`/credentials/${id}`, {
-      method: 'DELETE',
-    }),
+  delete: async (id: string) => {
+    const response = await axiosInstance.delete<ApiResponse<void>>(
+      `/credentials/${id}`
+    )
+    return response.data
+  },
 
-  test: (id: string) =>
-    request<ApiResponse<{ status: string }>>(`/credentials/${id}/test`, {
-      method: 'POST',
-    }),
+  test: async (id: string) => {
+    const response = await axiosInstance.post<
+      ApiResponse<{ status: string }>
+    >(`/credentials/${id}/test`)
+    return response.data
+  },
 }
 
 // Tests API
 export const testsApi = {
-  list: (params?: {
+  list: async (params?: {
     page?: number
     pageSize?: number
     status?: string
     credentialId?: string
-  }) =>
-    request<PaginatedResponse<TestResult>>(
-      `/tests?${new URLSearchParams(params as any).toString()}`
-    ),
+  }) => {
+    const response = await axiosInstance.get<PaginatedResponse<TestResult>>(
+      '/tests',
+      { params }
+    )
+    return response.data
+  },
 
-  get: (id: string) => request<ApiResponse<TestResult>>(`/tests/${id}`),
+  get: async (id: string) => {
+    const response = await axiosInstance.get<ApiResponse<TestResult>>(
+      `/tests/${id}`
+    )
+    return response.data
+  },
 
-  create: (config: TestConfiguration) =>
-    request<ApiResponse<TestResult>>('/tests', {
-      method: 'POST',
-      body: JSON.stringify(config),
-    }),
+  create: async (config: TestConfiguration) => {
+    const response = await axiosInstance.post<ApiResponse<TestResult>>(
+      '/tests',
+      config
+    )
+    return response.data
+  },
 
-  cancel: (id: string) =>
-    request<ApiResponse<void>>(`/tests/${id}/cancel`, {
-      method: 'POST',
-    }),
+  cancel: async (id: string) => {
+    const response = await axiosInstance.post<ApiResponse<void>>(
+      `/tests/${id}/cancel`
+    )
+    return response.data
+  },
 
-  export: (params: ExportRequest) =>
-    request<Blob>('/tests/export', {
-      method: 'POST',
-      body: JSON.stringify(params),
-    }),
+  export: async (params: ExportRequest) => {
+    const response = await axiosInstance.post<Blob>(
+      '/tests/export',
+      params,
+      {
+        responseType: 'blob',
+      }
+    )
+    return response.data
+  },
+
+  getProgress: async (id: string) => {
+    const response = await axiosInstance.get<ApiResponse<any>>(
+      `/tests/${id}/progress`
+    )
+    return response.data
+  },
 }
 
 // Dashboard API
 export const dashboardApi = {
-  stats: () => request<ApiResponse<DashboardStats>>('/dashboard/stats'),
+  stats: async (params?: { dateRange?: string }) => {
+    const response = await axiosInstance.get<ApiResponse<DashboardStats>>(
+      '/dashboard/stats',
+      { params }
+    )
+    return response.data
+  },
 }
-
-export { ApiError }
