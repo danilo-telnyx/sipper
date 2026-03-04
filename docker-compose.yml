@@ -1,0 +1,76 @@
+version: '3.9'
+
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: sipper-db
+    environment:
+      POSTGRES_DB: ${DB_NAME:-sipper}
+      POSTGRES_USER: ${DB_USER:-sipper}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Database password required}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    ports:
+      - "${DB_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sipper}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sipper-network
+    restart: unless-stopped
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sipper-app
+    environment:
+      # Database
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME:-sipper}
+      DB_USER: ${DB_USER:-sipper}
+      DB_PASSWORD: ${DB_PASSWORD:?Database password required}
+      
+      # SIP Configuration
+      SIP_SERVER: ${SIP_SERVER:-sip.example.com}
+      SIP_PORT: ${SIP_PORT:-5060}
+      SIP_TRANSPORT: ${SIP_TRANSPORT:-UDP}
+      
+      # Application
+      APP_ENV: ${APP_ENV:-production}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      SECRET_KEY: ${SECRET_KEY:?Secret key required}
+      
+      # Optional: Telnyx Integration
+      TELNYX_API_KEY: ${TELNYX_API_KEY:-}
+      TELNYX_SIP_CONNECTION_ID: ${TELNYX_SIP_CONNECTION_ID:-}
+    ports:
+      - "${APP_PORT:-8000}:8000"
+      - "${SIP_PORT:-5060}:5060/udp"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    networks:
+      - sipper-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  sipper-network:
+    driver: bridge

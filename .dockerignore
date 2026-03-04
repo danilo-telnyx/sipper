@@ -1,0 +1,51 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# CI/CD
+.github
+
+# Documentation
+*.md
+LICENSE
+CHANGELOG.md
+
+# Environment
+.env
+.env.*
+!.env.example
+
+# Dependencies
+node_modules
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv
+env
+ENV
+
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Testing
+.coverage
+htmlcov
+.pytest_cache
+coverage
+
+# Build artifacts
+dist
+build
+*.egg-info
+
+# Logs
+*.log
+logs/

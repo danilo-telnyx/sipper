@@ -1,0 +1,23 @@
+{
+  "name": "sipper-sip-engine",
+  "version": "1.0.0",
+  "description": "RFC3261-compliant SIP testing engine with Telnyx support",
+  "main": "src/index.js",
+  "type": "module",
+  "scripts": {
+    "test": "node tests/run-all.js",
+    "test:basic": "node tests/basic-call-flow.js",
+    "test:register": "node tests/registration.js",
+    "test:options": "node tests/options-ping.js",
+    "test:auth": "node tests/auth-challenge.js",
+    "test:telnyx": "node tests/telnyx-integration.js"
+  },
+  "keywords": ["sip", "rfc3261", "testing", "voip", "telnyx"],
+  "author": "Danilo Maldone",
+  "license": "MIT",
+  "dependencies": {
+    "uuid": "^9.0.1",
+    "chalk": "^5.3.0"
+  },
+  "devDependencies": {}
+}

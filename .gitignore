@@ -1,0 +1,49 @@
+# Environment
+.env
+.env.local
+
+# Dependencies
+node_modules/
+venv/
+env/
+ENV/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+coverage/
+
+# Build
+dist/
+build/
+*.egg-info/
+
+# Logs
+*.log
+logs/
+data/
+
+# Database
+*.db
+*.sqlite3
+postgres_data/
+
+# Secrets
+secrets/
+*.pem
+*.key
+*.crt
