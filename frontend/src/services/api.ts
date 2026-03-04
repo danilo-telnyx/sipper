@@ -26,9 +26,17 @@ export const authApi = {
   },
 
   register: async (data: RegisterRequest) => {
+    // Transform frontend camelCase to backend snake_case
+    const backendData = {
+      email: data.email,
+      password: data.password,
+      full_name: data.name,  // name → full_name
+      organization_name: data.organizationName || 'My Organization'  // organizationName → organization_name
+    }
+    
     const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
       '/auth/register',
-      data
+      backendData
     )
     return response.data
   },
