@@ -34,23 +34,65 @@ open http://localhost:8000
 
 ## 🔧 Configuration
 
-Create `.env` file in the project root:
+### 1. Create environment file
+
+```bash
+cp .env.example .env
+```
+
+### 2. Generate production secrets
+
+**IMPORTANT:** Never use default/example secrets in production!
+
+```bash
+# Generate JWT_SECRET (48 characters recommended)
+python3 -c "import secrets; print(f'JWT_SECRET={secrets.token_urlsafe(48)}')"
+
+# Generate SECRET_KEY (48 characters recommended)
+python3 -c "import secrets; print(f'SECRET_KEY={secrets.token_urlsafe(48)}')"
+
+# Generate ENCRYPTION_KEY (Fernet key for credential encryption)
+python3 -c "from cryptography.fernet import Fernet; print(f'ENCRYPTION_KEY={Fernet.generate_key().decode()}')"
+
+# Generate DB_PASSWORD
+python3 -c "import secrets; print(f'DB_PASSWORD={secrets.token_urlsafe(32)}')"
+```
+
+### 3. Update .env with generated secrets
 
 ```env
-# Database
-POSTGRES_USER=sipper
-POSTGRES_PASSWORD=your_secure_password
-POSTGRES_DB=sipper_db
+# Database Configuration
+DB_USER=sipper
+DB_PASSWORD=<paste generated password>
+DB_NAME=sipper_db
 
-# Backend API
-DATABASE_URL=postgresql+asyncpg://sipper:your_secure_password@db:5432/sipper_db
-JWT_SECRET=your_jwt_secret_key_min_32_characters_long
-ENCRYPTION_KEY=your_encryption_key_32_chars_minimum
-
-# Optional
+# Application Environment
+APP_ENV=production
 API_HOST=0.0.0.0
 API_PORT=8000
+
+# Security Secrets (REQUIRED)
+JWT_SECRET=<paste generated JWT secret>
+SECRET_KEY=<paste generated secret key>
+ENCRYPTION_KEY=<paste generated Fernet key>
+
+# CORS (comma-separated origins)
+CORS_ORIGINS=http://localhost:8000,http://localhost:3000
 ```
+
+### 4. Verify configuration
+
+After starting the application, verify everything works:
+
+```bash
+# Check health
+curl http://localhost:8000/health
+
+# Check logs for startup validation
+docker-compose logs app | grep -i "validation\|startup"
+```
+
+The application will **refuse to start** if weak/default secrets are detected.
 
 ## 🏗️ Architecture
 

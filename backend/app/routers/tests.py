@@ -1,6 +1,6 @@
 """Test execution endpoints."""
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -13,45 +13,57 @@ from app.auth.dependencies import get_current_active_user
 router = APIRouter(prefix="/tests", tags=["Tests"])
 
 
-async def execute_sip_test(test_run_id: UUID, db: AsyncSession):
+async def execute_sip_test(test_run_id: UUID):
     """
     Background task to execute SIP test.
     This is a placeholder - actual SIP testing logic would go here.
+    Creates its own DB session to avoid lifecycle issues.
     """
-    # Fetch test run
-    result = await db.execute(select(TestRun).where(TestRun.id == test_run_id))
-    test_run = result.scalar_one_or_none()
+    from app.database import AsyncSessionLocal
     
-    if not test_run:
-        return
-    
-    # Update status to running
-    test_run.status = "running"
-    await db.commit()
-    
-    # Simulate test execution
-    # TODO: Implement actual SIP testing logic (registration, call, message)
-    steps = [
-        {"step": "connect", "status": "success", "message": "Connected to SIP server"},
-        {"step": "register", "status": "success", "message": "Registration successful"},
-        {"step": "call", "status": "success", "message": "Call completed"},
-    ]
-    
-    for step in steps:
-        test_result = TestResult(
-            test_run_id=test_run_id,
-            step_name=step["step"],
-            status=step["status"],
-            message=step["message"],
-            details={}
-        )
-        db.add(test_result)
-    
-    # Update test run status
-    test_run.status = "completed"
-    test_run.completed_at = datetime.utcnow()
-    
-    await db.commit()
+    # Create new session for background task
+    async with AsyncSessionLocal() as db:
+        try:
+            # Fetch test run
+            result = await db.execute(select(TestRun).where(TestRun.id == test_run_id))
+            test_run = result.scalar_one_or_none()
+            
+            if not test_run:
+                return
+            
+            # Update status to running
+            test_run.status = "running"
+            await db.commit()
+            
+            # Simulate test execution
+            # TODO: Implement actual SIP testing logic (registration, call, message)
+            steps = [
+                {"step": "connect", "status": "success", "message": "Connected to SIP server"},
+                {"step": "register", "status": "success", "message": "Registration successful"},
+                {"step": "call", "status": "success", "message": "Call completed"},
+            ]
+            
+            for step in steps:
+                test_result = TestResult(
+                    test_run_id=test_run_id,
+                    step_name=step["step"],
+                    status=step["status"],
+                    message=step["message"],
+                    details={}
+                )
+                db.add(test_result)
+            
+            # Update test run status
+            test_run.status = "completed"
+            test_run.completed_at = datetime.now(timezone.utc)
+            
+            await db.commit()
+        except Exception as e:
+            # Log error and mark test as failed
+            await db.rollback()
+            if test_run:
+                test_run.status = "failed"
+                await db.commit()
 
 
 @router.post("/run", response_model=TestRunResponse, status_code=status.HTTP_202_ACCEPTED)
@@ -94,8 +106,8 @@ async def run_test(
     await db.commit()
     await db.refresh(test_run)
     
-    # Execute test in background
-    background_tasks.add_task(execute_sip_test, test_run.id, db)
+    # Execute test in background (creates its own DB session)
+    background_tasks.add_task(execute_sip_test, test_run.id)
     
     return test_run
 

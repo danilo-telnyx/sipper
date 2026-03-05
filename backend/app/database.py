@@ -3,11 +3,15 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine, async_sess
 from sqlalchemy.orm import declarative_base
 from app.config import settings
 
-# Create async engine
+# Create async engine with connection pooling
 engine = create_async_engine(
     settings.database_url,
-    echo=True,  # Set to False in production
+    echo=settings.app_env == "development",  # Only log SQL in development
     future=True,
+    pool_size=20,
+    max_overflow=10,
+    pool_pre_ping=True,
+    pool_recycle=3600,
 )
 
 # Create async session factory
