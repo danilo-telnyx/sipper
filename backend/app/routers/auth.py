@@ -31,6 +31,16 @@ async def register(
             detail="Email already registered"
         )
     
+    # Check if organization with same name already exists
+    result = await db.execute(select(Organization).where(Organization.name == register_data.organization_name))
+    existing_org = result.scalar_one_or_none()
+    
+    if existing_org:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Organization '{register_data.organization_name}' already exists. Please choose a different name or contact your organization admin."
+        )
+    
     # Generate unique organization slug
     base_slug = re.sub(r'[^a-z0-9-]', '', register_data.organization_name.lower().replace(" ", "-"))
     org_slug = base_slug
@@ -51,18 +61,26 @@ async def register(
         slug=org_slug
     )
     db.add(organization)
-    await db.flush()  # Get org ID
     
-    # Create user
-    user = User(
-        email=register_data.email,
-        password_hash=hash_password(register_data.password),
-        full_name=register_data.full_name,
-        organization_id=organization.id
-    )
-    db.add(user)
-    await db.commit()
-    await db.refresh(user)
+    try:
+        await db.flush()  # Get org ID
+        
+        # Create user
+        user = User(
+            email=register_data.email,
+            password_hash=hash_password(register_data.password),
+            full_name=register_data.full_name,
+            organization_id=organization.id
+        )
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+    except IntegrityError as e:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Registration failed. This organization name or email may already be in use."
+        )
     
     # Generate tokens
     token_data = {"sub": str(user.id), "org_id": str(user.organization_id)}
