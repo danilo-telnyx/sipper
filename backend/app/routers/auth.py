@@ -10,13 +10,13 @@ from app.database import get_db
 from app.models import User, Organization
 from app.schemas import LoginRequest, RegisterRequest, TokenResponse
 from app.auth import hash_password, verify_password, create_access_token, create_refresh_token
-from app.rate_limit import limiter
+from app.rate_limit import limiter, get_login_limit, get_register_limit
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
-@limiter.limit("3/10minutes")
+@limiter.limit(get_register_limit())  # Dynamic based on environment
 async def register(
     request: Request,
     register_data: RegisterRequest,
@@ -76,7 +76,7 @@ async def register(
 
 
 @router.post("/login", response_model=TokenResponse)
-@limiter.limit("5/minute")
+@limiter.limit(get_login_limit())  # Dynamic based on environment
 async def login(
     request: Request,
     login_data: LoginRequest,
