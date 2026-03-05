@@ -19,6 +19,10 @@ class Settings(BaseSettings):
         """Build database URL from components."""
         return f"postgresql+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}"
     
+    # Application
+    app_env: str = "production"  # development/production
+    secret_key: str = "change_this_secret_key"
+    
     # Security
     jwt_secret: str
     jwt_algorithm: str = "HS256"

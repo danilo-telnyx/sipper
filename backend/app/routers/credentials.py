@@ -56,9 +56,32 @@ async def get_credential(
     
     response = SIPCredentialResponse.model_validate(credential)
     
-    # Optionally include decrypted password (admin only in production)
+    # Optionally include decrypted password (requires admin role or view_passwords permission)
     if include_password:
-        # TODO: Check admin permission
+        # Check if user has admin role or view_passwords permission
+        from sqlalchemy.orm import selectinload
+        from app.models import Role, Permission, RolePermission, UserRole
+        
+        # Load user with roles and permissions
+        user_result = await db.execute(
+            select(User)
+            .options(selectinload(User.user_roles).selectinload(UserRole.role))
+            .where(User.id == current_user.id)
+        )
+        user_with_roles = user_result.scalar_one()
+        
+        # Check if user is admin
+        is_admin = any(
+            user_role.role.name.lower() in ['admin', 'administrator', 'owner']
+            for user_role in user_with_roles.user_roles
+        )
+        
+        if not is_admin:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only administrators can view decrypted passwords"
+            )
+        
         response_dict = response.model_dump()
         response_dict["password"] = decrypt_credential(credential.password_encrypted)
         return response_dict

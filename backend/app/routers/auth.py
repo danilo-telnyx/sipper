@@ -1,7 +1,7 @@
 """Authentication endpoints."""
 import re
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -10,18 +10,21 @@ from app.database import get_db
 from app.models import User, Organization
 from app.schemas import LoginRequest, RegisterRequest, TokenResponse
 from app.auth import hash_password, verify_password, create_access_token, create_refresh_token
+from app.rate_limit import limiter
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
 
 @router.post("/register", response_model=TokenResponse, status_code=status.HTTP_201_CREATED)
+@limiter.limit("3/10minutes")
 async def register(
-    request: RegisterRequest,
+    request: Request,
+    register_data: RegisterRequest,
     db: AsyncSession = Depends(get_db)
 ):
     """Register a new user and organization."""
     # Check if user already exists
-    result = await db.execute(select(User).where(User.email == request.email))
+    result = await db.execute(select(User).where(User.email == register_data.email))
     if result.scalar_one_or_none():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -29,7 +32,7 @@ async def register(
         )
     
     # Generate unique organization slug
-    base_slug = re.sub(r'[^a-z0-9-]', '', request.organization_name.lower().replace(" ", "-"))
+    base_slug = re.sub(r'[^a-z0-9-]', '', register_data.organization_name.lower().replace(" ", "-"))
     org_slug = base_slug
     
     # Check for slug conflicts and generate unique slug
@@ -44,7 +47,7 @@ async def register(
     
     # Create organization
     organization = Organization(
-        name=request.organization_name,
+        name=register_data.organization_name,
         slug=org_slug
     )
     db.add(organization)
@@ -52,9 +55,9 @@ async def register(
     
     # Create user
     user = User(
-        email=request.email,
-        password_hash=hash_password(request.password),
-        full_name=request.full_name,
+        email=register_data.email,
+        password_hash=hash_password(register_data.password),
+        full_name=register_data.full_name,
         organization_id=organization.id
     )
     db.add(user)
@@ -73,16 +76,18 @@ async def register(
 
 
 @router.post("/login", response_model=TokenResponse)
+@limiter.limit("5/minute")
 async def login(
-    request: LoginRequest,
+    request: Request,
+    login_data: LoginRequest,
     db: AsyncSession = Depends(get_db)
 ):
     """Login user."""
     # Find user
-    result = await db.execute(select(User).where(User.email == request.email))
+    result = await db.execute(select(User).where(User.email == login_data.email))
     user = result.scalar_one_or_none()
     
-    if not user or not verify_password(request.password, user.password_hash):
+    if not user or not verify_password(login_data.password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"

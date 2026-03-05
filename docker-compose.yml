@@ -1,46 +1,60 @@
 services:
+  # PostgreSQL Database Service
+  # Stores all application data: users, orgs, credentials, test results
   db:
     image: postgres:16-alpine
     container_name: sipper-db
     environment:
+      # Database name, user, and password from .env
+      # POSTGRES_PASSWORD is required and will fail if not set
       POSTGRES_DB: ${DB_NAME:-sipper}
       POSTGRES_USER: ${DB_USER:-sipper}
       POSTGRES_PASSWORD: ${DB_PASSWORD:?Database password required}
     volumes:
+      # Persistent storage for database data
       - postgres_data:/var/lib/postgresql/data
+      # Initialization SQL script (runs on first startup only)
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
+      # Database port exposed to host (optional, for debugging)
+      # Comment out in production for security
       - "${DB_PORT:-5432}:5432"
     healthcheck:
+      # Verify database is ready to accept connections
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-sipper}"]
       interval: 10s
       timeout: 5s
       retries: 5
+      # App service waits for this health check to pass before starting
     networks:
       - sipper-network
     restart: unless-stopped
 
+  # FastAPI Backend + React Frontend Service
+  # Serves API on :8000 and handles SIP on :5060/udp
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: sipper-app
     environment:
-      # Database
-      DB_HOST: db
+      # Database Connection (internal Docker network)
+      DB_HOST: db  # Points to 'db' service name (Docker DNS)
       DB_PORT: 5432
       DB_NAME: ${DB_NAME:-sipper}
       DB_USER: ${DB_USER:-sipper}
       DB_PASSWORD: ${DB_PASSWORD:?Database password required}
       
-      # SIP Configuration
+      # SIP Configuration (for test execution)
       SIP_SERVER: ${SIP_SERVER:-sip.example.com}
       SIP_PORT: ${SIP_PORT:-5060}
       SIP_TRANSPORT: ${SIP_TRANSPORT:-UDP}
       
-      # Application
-      APP_ENV: ${APP_ENV:-production}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
+      # Application Settings
+      APP_ENV: ${APP_ENV:-production}  # development/production
+      LOG_LEVEL: ${LOG_LEVEL:-info}  # debug/info/warning/error
+      
+      # Security Secrets (REQUIRED - app will fail to start with weak secrets)
       SECRET_KEY: ${SECRET_KEY:?Secret key required}
       JWT_SECRET: ${JWT_SECRET:?JWT secret required}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY:?Encryption key required}
@@ -49,28 +63,39 @@ services:
       TELNYX_API_KEY: ${TELNYX_API_KEY:-}
       TELNYX_SIP_CONNECTION_ID: ${TELNYX_SIP_CONNECTION_ID:-}
     ports:
+      # HTTP API and frontend
       - "${APP_PORT:-8000}:8000"
+      # SIP UDP port for test execution
       - "${SIP_PORT:-5060}:5060/udp"
     depends_on:
+      # Wait for database to be healthy before starting
       db:
         condition: service_healthy
     volumes:
+      # Mount directories for logs and data persistence
       - ./logs:/app/logs
       - ./data:/app/data
     networks:
       - sipper-network
     restart: unless-stopped
     healthcheck:
+      # Verify application is responding on /health endpoint
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
+      interval: 30s  # Check every 30 seconds
+      timeout: 10s  # Wait up to 10 seconds for response
+      retries: 3  # Mark unhealthy after 3 consecutive failures
+      start_period: 40s  # Grace period for startup (don't check for 40s)
 
 volumes:
+  # Named volume for PostgreSQL data persistence
+  # Data survives container restarts and rebuilds
+  # Remove with: docker-compose down -v (WARNING: deletes all data!)
   postgres_data:
     driver: local
 
 networks:
+  # Internal bridge network for service-to-service communication
+  # Services can reach each other by container name (e.g., app -> db)
+  # Not accessible from host unless ports are explicitly exposed
   sipper-network:
     driver: bridge
