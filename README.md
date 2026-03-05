@@ -136,6 +136,41 @@ docker-compose restart
 docker-compose down
 ```
 
+## 🔧 Development Scripts
+
+**Full rebuild (use when frontend changes):**
+```bash
+./scripts/rebuild.sh
+```
+
+**Quick restart (use to clear rate limits):**
+```bash
+./scripts/quick-reset.sh
+```
+
+**Manual rebuild:**
+```bash
+docker-compose down
+docker-compose build --no-cache
+docker-compose up -d
+```
+
+## ⚙️ Development vs Production
+
+The application automatically adjusts based on `APP_ENV`:
+
+**Development mode** (`APP_ENV=development`):
+- Permissive rate limiting (100 requests/min)
+- SQL queries logged
+- Detailed error messages
+
+**Production mode** (`APP_ENV=production`):
+- Strict rate limiting (5 login/min, 3 register/10min)
+- SQL logging disabled
+- Minimal error exposure
+
+Set in `.env`: `APP_ENV=development` or `APP_ENV=production`
+
 ## 📚 API Documentation
 
 Once running, visit:

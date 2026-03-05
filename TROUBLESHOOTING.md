@@ -177,6 +177,24 @@ echo "CORS_ORIGINS=http://localhost:3000,http://localhost:8000" >> .env
 docker-compose restart app
 ```
 
+### Frontend Not Loading / Asset Errors
+
+**Symptoms:**
+- Blank page or "Failed to fetch dynamically imported module"
+- 404 errors on /assets/*.js files
+
+**Cause:** Docker cached old frontend build
+
+**Solution:**
+```bash
+./scripts/rebuild.sh
+# OR manually:
+docker-compose down
+docker rmi sipper-app
+docker-compose build --no-cache
+docker-compose up -d
+```
+
 ---
 
 ## 🗄️ Database Issues
@@ -287,16 +305,29 @@ docker-compose logs app | grep -i "session\|pool"
 This is expected behavior to prevent brute-force attacks.
 
 **Limits:**
-- Login: 5 requests per minute per IP
-- Register: 3 requests per 10 minutes per IP
+- Login: 5 requests per minute per IP (production) / 100 per minute (development)
+- Register: 3 requests per 10 minutes per IP (production) / 100 per hour (development)
 
 ```bash
 # Wait a few minutes and try again
 
-# For development, you can temporarily disable rate limiting:
-# Comment out @limiter.limit() decorators in backend/app/routers/auth.py
-# ⚠️ DO NOT disable in production!
+# For development, set APP_ENV=development in .env for permissive rate limits
+# ⚠️ Always use APP_ENV=production in production environments!
 ```
+
+### Rate Limit Errors During Testing
+
+**Symptoms:**
+- "Rate limit exceeded" on login/register
+- HTTP 429 errors
+
+**Quick fix:**
+```bash
+./scripts/quick-reset.sh
+```
+
+**Permanent fix:**
+Set `APP_ENV=development` in `.env` for permissive rate limits during development.
 
 ---
 
