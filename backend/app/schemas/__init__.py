@@ -1,5 +1,5 @@
 """Pydantic schemas for request/response validation."""
-from app.schemas.auth import TokenResponse, LoginRequest, RegisterRequest
+from app.schemas.auth import TokenResponse, LoginRequest, RegisterRequest, UserData
 from app.schemas.user import UserCreate, UserUpdate, UserResponse
 from app.schemas.organization import OrganizationCreate, OrganizationUpdate, OrganizationResponse
 from app.schemas.role import RoleCreate, RoleResponse, PermissionResponse
@@ -10,6 +10,7 @@ __all__ = [
     "TokenResponse",
     "LoginRequest",
     "RegisterRequest",
+    "UserData",
     "UserCreate",
     "UserUpdate",
     "UserResponse",
