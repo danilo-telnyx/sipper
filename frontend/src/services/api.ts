@@ -1,4 +1,4 @@
-import axiosInstance from '../lib/axios'
+import axiosInstance, { getErrorMessage } from '../lib/axios'
 import type {
   ApiResponse,
   PaginatedResponse,
@@ -18,27 +18,95 @@ import type {
 // Auth API
 export const authApi = {
   login: async (data: LoginRequest) => {
-    const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
-      '/auth/login',
-      data
-    )
-    return response.data
+    try {
+      const response = await axiosInstance.post<any>(
+        '/auth/login',
+        data
+      )
+      
+      // Backend returns: { access_token, refresh_token, token_type, user }
+      // Transform to frontend format: { token, refreshToken, user }
+      const backendData = response.data
+      
+      if (!backendData.user) {
+        throw new Error('Backend did not return user data')
+      }
+      
+      // Transform backend user format to frontend format
+      const user = {
+        id: backendData.user.id,
+        email: backendData.user.email,
+        name: backendData.user.full_name, // backend: full_name → frontend: name
+        role: backendData.user.role,
+        organizationId: backendData.user.organization_id, // backend: organization_id → frontend: organizationId
+        createdAt: backendData.user.created_at, // backend: created_at → frontend: createdAt
+        updatedAt: backendData.user.created_at, // Use created_at as updatedAt for now
+      }
+      
+      return {
+        success: true,
+        data: {
+          user,
+          token: backendData.access_token,
+          refreshToken: backendData.refresh_token,
+        } as AuthResponse
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: getErrorMessage(error)
+      }
+    }
   },
 
   register: async (data: RegisterRequest) => {
-    // Transform frontend camelCase to backend snake_case
-    const backendData = {
-      email: data.email,
-      password: data.password,
-      full_name: data.name,  // name → full_name
-      organization_name: data.organizationName || 'My Organization'  // organizationName → organization_name
+    try {
+      // Transform frontend camelCase to backend snake_case
+      const backendPayload = {
+        email: data.email,
+        password: data.password,
+        full_name: data.name,  // name → full_name
+        organization_name: data.organizationName || 'My Organization'  // organizationName → organization_name
+      }
+      
+      const response = await axiosInstance.post<any>(
+        '/auth/register',
+        backendPayload
+      )
+      
+      // Backend returns: { access_token, refresh_token, token_type, user }
+      // Transform to frontend format: { token, refreshToken, user }
+      const backendData = response.data
+      
+      if (!backendData.user) {
+        throw new Error('Backend did not return user data')
+      }
+      
+      // Transform backend user format to frontend format
+      const user = {
+        id: backendData.user.id,
+        email: backendData.user.email,
+        name: backendData.user.full_name, // backend: full_name → frontend: name
+        role: backendData.user.role,
+        organizationId: backendData.user.organization_id, // backend: organization_id → frontend: organizationId
+        createdAt: backendData.user.created_at, // backend: created_at → frontend: createdAt
+        updatedAt: backendData.user.created_at, // Use created_at as updatedAt for now
+      }
+      
+      return {
+        success: true,
+        data: {
+          user,
+          token: backendData.access_token,
+          refreshToken: backendData.refresh_token,
+        } as AuthResponse
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: getErrorMessage(error)
+      }
     }
-    
-    const response = await axiosInstance.post<ApiResponse<AuthResponse>>(
-      '/auth/register',
-      backendData
-    )
-    return response.data
   },
 
   logout: async () => {

@@ -87,9 +87,20 @@ async def register(
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
     
+    # Return tokens with user data (new users default to "user" role)
+    from app.schemas import UserData
     return TokenResponse(
         access_token=access_token,
-        refresh_token=refresh_token
+        refresh_token=refresh_token,
+        user=UserData(
+            id=str(user.id),
+            email=user.email,
+            full_name=user.full_name,
+            role="user",  # Default role for new registrations
+            organization_id=str(user.organization_id),
+            is_active=user.is_active,
+            created_at=user.created_at.isoformat() if user.created_at else ""
+        )
     )
 
 
@@ -101,30 +112,64 @@ async def login(
     db: AsyncSession = Depends(get_db)
 ):
     """Login user."""
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    logger.info(f"🔐 Login attempt for: {login_data.email}")
+    
     # Find user
     result = await db.execute(select(User).where(User.email == login_data.email))
     user = result.scalar_one_or_none()
     
     if not user or not verify_password(login_data.password, user.password_hash):
+        logger.warning(f"❌ Login failed for: {login_data.email} - Invalid credentials")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Incorrect email or password"
         )
     
     if not user.is_active:
+        logger.warning(f"❌ Login failed for: {login_data.email} - User inactive")
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="User account is disabled"
         )
+    
+    # Fetch user's role (if exists)
+    from app.models import UserRole
+    role_result = await db.execute(
+        select(UserRole).where(UserRole.user_id == user.id)
+    )
+    user_role = role_result.scalar_one_or_none()
+    
+    # Get role name, default to "user"
+    role_name = "user"
+    if user_role:
+        await db.refresh(user_role, ["role"])
+        if user_role.role:
+            role_name = user_role.role.name
+    
+    logger.info(f"✅ Login successful for: {user.email} (ID: {user.id}, Role: {role_name})")
     
     # Generate tokens
     token_data = {"sub": str(user.id), "org_id": str(user.organization_id)}
     access_token = create_access_token(token_data)
     refresh_token = create_refresh_token(token_data)
     
+    # Return tokens with user data
+    from app.schemas import UserData
     return TokenResponse(
         access_token=access_token,
-        refresh_token=refresh_token
+        refresh_token=refresh_token,
+        user=UserData(
+            id=str(user.id),
+            email=user.email,
+            full_name=user.full_name,
+            role=role_name,
+            organization_id=str(user.organization_id),
+            is_active=user.is_active,
+            created_at=user.created_at.isoformat() if user.created_at else ""
+        )
     )
 
 

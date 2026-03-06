@@ -112,11 +112,24 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [authStore.isAuthenticated])
 
   const login = async (credentials: LoginRequest) => {
+    console.log('🔐 Login attempt:', { email: credentials.email })
+    
     const response = await authApi.login(credentials)
+    console.log('✅ Login API response:', response)
     
     if (response.success && response.data) {
+      console.log('✅ Setting auth state:', {
+        hasUser: !!response.data.user,
+        hasToken: !!response.data.token,
+        hasRefreshToken: !!response.data.refreshToken,
+        userName: response.data.user?.name,
+        userEmail: response.data.user?.email,
+      })
+      
       authStore.setAuth(response.data)
+      console.log('✅ Auth state set successfully')
     } else {
+      console.error('❌ Login failed:', response.error)
       throw new Error(response.error || 'Login failed')
     }
   }
