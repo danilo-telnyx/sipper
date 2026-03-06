@@ -188,36 +188,87 @@ export const organizationApi = {
   },
 }
 
+// Helper to transform backend credential to frontend format
+const transformCredential = (backendCred: any): SipCredential => ({
+  id: backendCred.id,
+  name: backendCred.name,
+  username: backendCred.username,
+  password: backendCred.password || '',
+  domain: backendCred.sip_domain,  // sip_domain → domain
+  proxy: backendCred.outbound_proxy || undefined,  // outbound_proxy → proxy
+  port: backendCred.port,
+  transport: backendCred.transport,
+  organizationId: backendCred.organization_id,
+  createdBy: backendCred.created_by,
+  createdAt: backendCred.created_at,
+  updatedAt: backendCred.updated_at,
+  lastTestedAt: backendCred.last_tested_at,
+  isActive: backendCred.is_active ?? true,
+})
+
 // Credentials API
 export const credentialsApi = {
   list: async () => {
-    const response = await axiosInstance.get<ApiResponse<SipCredential[]>>(
-      '/credentials'
-    )
-    return response.data
+    const response = await axiosInstance.get<any>('/credentials')
+    // Transform backend array to frontend format
+    if (response.data && Array.isArray(response.data)) {
+      return {
+        success: true,
+        data: response.data.map(transformCredential)
+      }
+    }
+    return { success: true, data: [] }
   },
 
   get: async (id: string) => {
-    const response = await axiosInstance.get<ApiResponse<SipCredential>>(
-      `/credentials/${id}`
-    )
-    return response.data
+    const response = await axiosInstance.get<any>(`/credentials/${id}`)
+    return {
+      success: true,
+      data: transformCredential(response.data)
+    }
   },
 
   create: async (data: CreateCredentialRequest) => {
-    const response = await axiosInstance.post<ApiResponse<SipCredential>>(
+    // Transform frontend field names to backend snake_case
+    const backendPayload = {
+      name: data.name,
+      sip_domain: data.domain,  // domain → sip_domain
+      username: data.username,
+      password: data.password,
+      port: data.port,
+      transport: data.transport,
+      outbound_proxy: data.proxy || null,  // proxy → outbound_proxy
+    }
+    
+    const response = await axiosInstance.post<any>(
       '/credentials',
-      data
+      backendPayload
     )
-    return response.data
+    return {
+      success: true,
+      data: transformCredential(response.data)
+    }
   },
 
   update: async (id: string, data: Partial<CreateCredentialRequest>) => {
-    const response = await axiosInstance.put<ApiResponse<SipCredential>>(
+    // Transform frontend field names to backend snake_case
+    const backendPayload: any = {}
+    if (data.name !== undefined) backendPayload.name = data.name
+    if (data.domain !== undefined) backendPayload.sip_domain = data.domain
+    if (data.username !== undefined) backendPayload.username = data.username
+    if (data.password !== undefined) backendPayload.password = data.password
+    if (data.port !== undefined) backendPayload.port = data.port
+    if (data.transport !== undefined) backendPayload.transport = data.transport
+    if (data.proxy !== undefined) backendPayload.outbound_proxy = data.proxy || null
+    
+    const response = await axiosInstance.put<any>(
       `/credentials/${id}`,
-      data
+      backendPayload
     )
-    return response.data
+    return {
+      success: true,
+      data: transformCredential(response.data)
+    }
   },
 
   delete: async (id: string) => {

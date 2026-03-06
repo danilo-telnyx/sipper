@@ -9,6 +9,9 @@ class SIPCredentialBase(BaseModel):
     name: str
     sip_domain: str
     username: str
+    port: int = 5060
+    transport: str = "UDP"  # UDP, TCP, TLS
+    outbound_proxy: str | None = None
 
 
 class SIPCredentialCreate(SIPCredentialBase):
@@ -22,6 +25,9 @@ class SIPCredentialUpdate(BaseModel):
     sip_domain: str | None = None
     username: str | None = None
     password: str | None = None
+    port: int | None = None
+    transport: str | None = None
+    outbound_proxy: str | None = None
 
 
 class SIPCredentialResponse(SIPCredentialBase):
