@@ -106,6 +106,9 @@ async def create_credential(
         sip_domain=credential_data.sip_domain,
         username=credential_data.username,
         password_encrypted=encrypted_password,
+        port=credential_data.port,
+        transport=credential_data.transport,
+        outbound_proxy=credential_data.outbound_proxy,
         created_by=current_user.id
     )
     db.add(credential)
