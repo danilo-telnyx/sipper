@@ -64,7 +64,7 @@ RUN chmod +x /app/docker-entrypoint.sh
 
 # Install SIP engine dependencies
 WORKDIR /app/backend/sip-engine
-RUN npm ci --production
+RUN if [ -f package-lock.json ]; then npm ci --omit=dev; else npm install --omit=dev; fi
 WORKDIR /app
 
 # Create non-root user

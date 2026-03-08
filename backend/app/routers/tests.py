@@ -24,18 +24,22 @@ async def execute_sip_test(test_run_id: UUID):
     # Create new session for background task
     async with AsyncSessionLocal() as db:
         try:
-            # Fetch test run and credential
+            # Fetch test run
             result = await db.execute(
-                select(TestRun, SIPCredential)
-                .outerjoin(SIPCredential, TestRun.credential_id == SIPCredential.id)
-                .where(TestRun.id == test_run_id)
+                select(TestRun).where(TestRun.id == test_run_id)
             )
-            row = result.first()
+            test_run = result.scalar_one_or_none()
             
-            if not row:
+            if not test_run:
                 return
             
-            test_run, credential = row
+            # Fetch credential if credential_id is set
+            credential = None
+            if test_run.credential_id:
+                cred_result = await db.execute(
+                    select(SIPCredential).where(SIPCredential.id == test_run.credential_id)
+                )
+                credential = cred_result.scalar_one_or_none()
             
             # Update status to running
             test_run.status = "running"
@@ -50,9 +54,19 @@ async def execute_sip_test(test_run_id: UUID):
                 credentials = {
                     "username": credential.username,
                     "password": credential.password,
-                    "host": credential.domain,
-                    "domain": credential.domain,
+                    "host": credential.sip_domain,
+                    "domain": credential.sip_domain,
                     "port": credential.port or 5060
+                }
+            elif test_run.metadata and "ad_hoc_credentials" in test_run.metadata:
+                # Use ad-hoc credentials from metadata
+                ad_hoc = test_run.metadata["ad_hoc_credentials"]
+                credentials = {
+                    "username": ad_hoc.get("username"),
+                    "password": ad_hoc.get("password"),
+                    "host": ad_hoc.get("domain"),
+                    "domain": ad_hoc.get("domain"),
+                    "port": ad_hoc.get("port", 5060)
                 }
             
             # Get test config from metadata
@@ -164,7 +178,7 @@ async def run_test(
     current_user: User = Depends(get_current_active_user)
 ):
     """Execute a SIP test (async)."""
-    # Validate credential access
+    # Validate credential access if credential_id provided
     if test_data.credential_id:
         result = await db.execute(
             select(SIPCredential).where(SIPCredential.id == test_data.credential_id)
@@ -182,6 +196,24 @@ async def run_test(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied to credential"
             )
+    elif not test_data.ad_hoc_credentials:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Either credential_id or ad_hoc_credentials must be provided"
+        )
+    
+    # Prepare metadata
+    metadata = dict(test_data.metadata) if test_data.metadata else {}
+    
+    # Store ad-hoc credentials in metadata (if provided)
+    if test_data.ad_hoc_credentials:
+        metadata["ad_hoc_credentials"] = {
+            "domain": test_data.ad_hoc_credentials.domain,
+            "username": test_data.ad_hoc_credentials.username,
+            "password": test_data.ad_hoc_credentials.password,
+            "port": test_data.ad_hoc_credentials.port,
+            "transport": test_data.ad_hoc_credentials.transport,
+        }
     
     # Create test run
     test_run = TestRun(
@@ -190,7 +222,7 @@ async def run_test(
         test_type=test_data.test_type,
         status="pending",
         created_by=current_user.id,
-        metadata=test_data.metadata
+        metadata=metadata
     )
     db.add(test_run)
     await db.commit()

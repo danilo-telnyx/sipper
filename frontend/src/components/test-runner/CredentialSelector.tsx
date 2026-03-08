@@ -1,15 +1,18 @@
 import { useState } from 'react'
-import { Search } from 'lucide-react'
+import { Search, Settings } from 'lucide-react'
 import { Input } from '../ui/input'
 import { Label } from '../ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
 import { Badge } from '../ui/badge'
+import { Button } from '../ui/button'
 import type { SipCredential } from '../../types/index'
+import { AdHocCredentialForm, type AdHocCredentials } from './AdHocCredentialForm'
 
 interface CredentialSelectorProps {
   credentials: SipCredential[]
   selectedId: string
   onSelect: (id: string) => void
+  onAdHocSubmit?: (credentials: AdHocCredentials) => void
   disabled?: boolean
 }
 
@@ -17,9 +20,36 @@ export function CredentialSelector({
   credentials,
   selectedId,
   onSelect,
+  onAdHocSubmit,
   disabled = false,
 }: CredentialSelectorProps) {
   const [searchTerm, setSearchTerm] = useState('')
+  const [showAdHocForm, setShowAdHocForm] = useState(false)
+
+  const handleAdHocSubmit = (creds: AdHocCredentials) => {
+    setShowAdHocForm(false)
+    if (onAdHocSubmit) {
+      onAdHocSubmit(creds)
+    }
+  }
+
+  if (showAdHocForm) {
+    return (
+      <div className="space-y-4">
+        <Button
+          variant="ghost"
+          onClick={() => setShowAdHocForm(false)}
+          disabled={disabled}
+        >
+          ← Back to Saved Credentials
+        </Button>
+        <AdHocCredentialForm
+          onSubmit={handleAdHocSubmit}
+          disabled={disabled}
+        />
+      </div>
+    )
+  }
 
   const filteredCredentials = credentials.filter((cred) =>
     cred.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -30,10 +60,25 @@ export function CredentialSelector({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Step 1: Select Credential</CardTitle>
-        <CardDescription>
-          Choose a SIP credential to test
-        </CardDescription>
+        <div className="flex items-start justify-between">
+          <div>
+            <CardTitle>Step 1: Select Credential</CardTitle>
+            <CardDescription>
+              Choose a SIP credential to test
+            </CardDescription>
+          </div>
+          {onAdHocSubmit && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdHocForm(true)}
+              disabled={disabled}
+            >
+              <Settings className="h-4 w-4 mr-2" />
+              Use Ad-hoc Credentials
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="relative">

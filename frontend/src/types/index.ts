@@ -93,8 +93,17 @@ export type TestStatus =
   | 'failed'
   | 'cancelled'
 
+export interface AdHocCredentials {
+  domain: string
+  username: string
+  password: string
+  port: number
+  transport: 'UDP' | 'TCP' | 'TLS'
+}
+
 export interface TestConfiguration {
-  credentialId: string
+  credentialId?: string
+  adHocCredentials?: AdHocCredentials
   testType: TestType
   endpoint?: string
   duration?: number

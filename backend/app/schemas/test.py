@@ -32,11 +32,21 @@ class REFERParams(BaseModel):
     replaces: str | None = Field(None, description="Call-ID for attended transfer (RFC 3891)")
 
 
+class AdHocCredentials(BaseModel):
+    """Ad-hoc SIP credentials (not saved)."""
+    domain: str = Field(..., description="SIP domain")
+    username: str = Field(..., description="SIP username")
+    password: str = Field(..., description="SIP password")
+    port: int = Field(5060, description="SIP port")
+    transport: Literal["UDP", "TCP", "TLS"] = Field("UDP", description="Transport protocol")
+
+
 class TestRunBase(BaseModel):
     """Base test run schema."""
     test_type: SIPTestType = Field(..., description="SIP method to test")
     credential_id: UUID | None = Field(None, description="Optional SIP credentials (null for unauthenticated)")
-    authenticated: bool = Field(False, description="Use authentication (requires credential_id)")
+    ad_hoc_credentials: AdHocCredentials | None = Field(None, description="Ad-hoc credentials (not saved)")
+    authenticated: bool = Field(False, description="Use authentication (requires credential_id or ad_hoc_credentials)")
     
     # Method-specific parameters
     refer_params: REFERParams | None = Field(None, description="Required for REFER tests")

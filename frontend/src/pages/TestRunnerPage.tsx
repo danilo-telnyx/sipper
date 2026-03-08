@@ -30,6 +30,7 @@ export function TestRunnerPage() {
   // Wizard state
   const [currentStep, setCurrentStep] = useState(0)
   const [selectedCredential, setSelectedCredential] = useState('')
+  const [adHocCredentials, setAdHocCredentials] = useState<any>(null)
   const [selectedTestType, setSelectedTestType] = useState<TestType>('basic-registration')
   const [advancedOptions, setAdvancedOptions] = useState({
     endpoint: '',
@@ -184,7 +185,7 @@ export function TestRunnerPage() {
   const canProceed = () => {
     switch (currentStep) {
       case 0:
-        return selectedCredential !== ''
+        return selectedCredential !== '' || adHocCredentials !== null
       case 1:
         return !!selectedTestType
       case 2:
@@ -197,17 +198,18 @@ export function TestRunnerPage() {
   }
 
   const handleRunTest = () => {
-    if (!selectedCredential) {
+    if (!selectedCredential && !adHocCredentials) {
       toast({
         title: 'No credential selected',
-        description: 'Please select a SIP credential to test',
+        description: 'Please select a SIP credential or provide ad-hoc credentials',
         variant: 'destructive',
       })
       return
     }
 
     const config: TestConfiguration = {
-      credentialId: selectedCredential,
+      credentialId: selectedCredential || undefined,
+      adHocCredentials: adHocCredentials || undefined,
       testType: selectedTestType,
       endpoint: advancedOptions.endpoint || undefined,
       duration: advancedOptions.timeout,
@@ -320,7 +322,15 @@ export function TestRunnerPage() {
           <CredentialSelector
             credentials={credentials}
             selectedId={selectedCredential}
-            onSelect={setSelectedCredential}
+            onSelect={(id) => {
+              setSelectedCredential(id)
+              setAdHocCredentials(null)
+            }}
+            onAdHocSubmit={(creds) => {
+              setAdHocCredentials(creds)
+              setSelectedCredential('')
+              setCurrentStep(1) // Auto-advance to next step
+            }}
             disabled={isRunning}
           />
         )}
