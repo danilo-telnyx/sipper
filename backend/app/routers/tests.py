@@ -18,9 +18,11 @@ async def execute_sip_test(test_run_id: UUID):
     """
     Background task to execute SIP test via Node.js SIP Engine.
     Creates its own DB session to avoid lifecycle issues.
+    Sends real-time updates via WebSocket.
     """
     from app.database import AsyncSessionLocal
     from app.sip_engine_client import get_sip_engine_client
+    from app.websocket import send_test_progress, send_test_log, send_test_completed, send_test_failed
     
     # Create new session for background task
     async with AsyncSessionLocal() as db:
@@ -45,6 +47,13 @@ async def execute_sip_test(test_run_id: UUID):
             # Update status to running
             test_run.status = "running"
             await db.commit()
+            
+            # Send WebSocket notification: test started
+            await send_test_progress(
+                str(test_run_id),
+                str(test_run.organization_id),
+                {"status": "running", "progress": 0, "currentStep": "Initializing test"}
+            )
             
             # Prepare SIP engine client
             sip_client = get_sip_engine_client()
@@ -83,11 +92,25 @@ async def execute_sip_test(test_run_id: UUID):
             }
             sip_test_type = test_type_map.get(test_run.test_type, test_run.test_type)
             
+            # Send progress: Connecting to SIP server
+            await send_test_progress(
+                str(test_run_id),
+                str(test_run.organization_id),
+                {"status": "running", "progress": 25, "currentStep": "Connecting to SIP server"}
+            )
+            
             # Execute test via SIP engine
             result = await sip_client.run_test(
                 test_type=sip_test_type,
                 credentials=credentials,
                 config=config
+            )
+            
+            # Send progress: Processing results
+            await send_test_progress(
+                str(test_run_id),
+                str(test_run.organization_id),
+                {"status": "running", "progress": 75, "currentStep": "Processing SIP messages"}
             )
             
             # Store test messages as results
@@ -146,6 +169,24 @@ async def execute_sip_test(test_run_id: UUID):
             
             await db.commit()
             
+            # Send WebSocket notification: test completed
+            if result.get("success"):
+                await send_test_completed(
+                    str(test_run_id),
+                    str(test_run.organization_id),
+                    {
+                        "status": "completed",
+                        "duration": result.get("duration"),
+                        "summary": f"Test {result.get('testName')} completed successfully"
+                    }
+                )
+            else:
+                await send_test_failed(
+                    str(test_run_id),
+                    str(test_run.organization_id),
+                    f"Test failed: {', '.join(result.get('errors', []))}"
+                )
+            
         except Exception as e:
             # Log error and mark test as failed
             print(f"Test execution error: {str(e)}")
@@ -169,6 +210,13 @@ async def execute_sip_test(test_run_id: UUID):
                     db.add(error_result)
                     
                     await db.commit()
+                    
+                    # Send WebSocket failure notification
+                    await send_test_failed(
+                        str(test_run_id),
+                        str(test_run.organization_id),
+                        f"Test execution error: {str(e)}"
+                    )
             except Exception:
                 pass  # Best effort
 

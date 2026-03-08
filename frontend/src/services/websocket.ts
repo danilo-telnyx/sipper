@@ -1,22 +1,23 @@
-import { io, Socket } from 'socket.io-client'
 import type { TestProgress, TestLog } from '../types/index'
 import { useAuthStore } from '../store/auth'
 import { testsApi } from './api'
 
-const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8080'
-const RECONNECT_ATTEMPTS = 5
+const WS_URL = import.meta.env.VITE_WS_URL || 'ws://localhost:8000/ws'
 const RECONNECT_DELAY = 1000
 const POLLING_INTERVAL = 2000
 
 class WebSocketService {
-  private socket: Socket | null = null
+  private ws: WebSocket | null = null
   private listeners: Map<string, Set<(data: any) => void>> = new Map()
   private reconnectAttempts = 0
+  private maxReconnectAttempts = 5
   private isConnected = false
-  private shouldUsePolling = true // Start with polling by default (WebSocket not implemented)
+  private shouldUsePolling = false
   private pollingIntervals: Map<string, NodeJS.Timeout> = new Map()
-  private wsEnabled = false // WebSocket feature flag - set to true when backend supports it
-  private pollingModeLogged = false // Only log polling mode once
+  private wsEnabled = true // WebSocket enabled - backend now supports it
+  private pollingModeLogged = false
+  private subscribedTests: Set<string> = new Set()
+  private reconnectTimeout: NodeJS.Timeout | null = null
 
   connect() {
     // Skip WebSocket connection if not enabled
@@ -26,7 +27,7 @@ class WebSocketService {
       return
     }
 
-    if (this.socket?.connected) return
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) return
 
     const token = useAuthStore.getState().token
     if (!token) {
@@ -36,14 +37,9 @@ class WebSocketService {
     }
 
     try {
-      this.socket = io(WS_URL, {
-        auth: { token },
-        transports: ['websocket'],
-        reconnection: true,
-        reconnectionDelay: RECONNECT_DELAY,
-        reconnectionDelayMax: 5000,
-        reconnectionAttempts: RECONNECT_ATTEMPTS,
-      })
+      // Construct WebSocket URL with token as query parameter
+      const wsUrl = `${WS_URL}?token=${token}`
+      this.ws = new WebSocket(wsUrl)
 
       this.setupSocketListeners()
     } catch (error) {
@@ -53,72 +49,117 @@ class WebSocketService {
   }
 
   private setupSocketListeners() {
-    if (!this.socket) return
+    if (!this.ws) return
 
-    this.socket.on('connect', () => {
-      console.log('WebSocket connected')
+    this.ws.onopen = () => {
+      console.log('✓ WebSocket connected')
       this.isConnected = true
       this.reconnectAttempts = 0
       this.shouldUsePolling = false
       this.stopAllPolling()
-    })
 
-    this.socket.on('disconnect', (reason) => {
-      console.log('WebSocket disconnected:', reason)
-      this.isConnected = false
-      
-      // If disconnect was unexpected, enable polling fallback
-      if (reason === 'io server disconnect' || reason === 'transport close') {
-        this.enablePollingFallback()
+      // Resubscribe to all active tests
+      this.subscribedTests.forEach(testId => {
+        this.sendMessage({ action: 'subscribe', testId })
+      })
+    }
+
+    this.ws.onmessage = (event) => {
+      try {
+        const message = JSON.parse(event.data)
+        const { event: eventType, data } = message
+
+        switch (eventType) {
+          case 'connected':
+            console.log('WebSocket server acknowledged connection')
+            break
+
+          case 'test:progress':
+            this.emit('test:progress', data)
+            break
+
+          case 'test:log':
+            this.emit('test:log', data)
+            break
+
+          case 'test:completed':
+            this.emit('test:completed', data)
+            this.stopPollingForTest(data.testId)
+            break
+
+          case 'test:failed':
+            this.emit('test:failed', data)
+            this.stopPollingForTest(data.testId)
+            break
+
+          case 'subscribed':
+            console.log(`Subscribed to test: ${data.testId}`)
+            break
+
+          case 'unsubscribed':
+            console.log(`Unsubscribed from test: ${data.testId}`)
+            break
+
+          case 'pong':
+            // Heartbeat response
+            break
+
+          case 'error':
+            console.error('WebSocket server error:', data.message)
+            break
+
+          default:
+            console.warn('Unknown WebSocket event:', eventType)
+        }
+      } catch (error) {
+        console.error('Failed to parse WebSocket message:', error)
       }
-    })
+    }
 
-    this.socket.on('connect_error', (error) => {
-      console.error('WebSocket connection error:', error)
-      this.reconnectAttempts++
-      
-      // If we've exceeded reconnect attempts, fall back to polling
-      if (this.reconnectAttempts >= RECONNECT_ATTEMPTS) {
+    this.ws.onclose = (event) => {
+      console.log('WebSocket disconnected:', event.code, event.reason)
+      this.isConnected = false
+
+      // Attempt to reconnect unless we're over the limit
+      if (this.reconnectAttempts < this.maxReconnectAttempts) {
+        this.reconnectAttempts++
+        console.log(`Reconnecting... (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
+        
+        this.reconnectTimeout = setTimeout(() => {
+          this.connect()
+        }, RECONNECT_DELAY * this.reconnectAttempts)
+      } else {
         console.warn('Max reconnection attempts reached, falling back to polling')
         this.enablePollingFallback()
       }
-    })
+    }
 
-    this.socket.on('error', (error) => {
+    this.ws.onerror = (error) => {
       console.error('WebSocket error:', error)
-    })
-
-    // Test progress updates
-    this.socket.on('test:progress', (data: TestProgress & { logs?: TestLog[] }) => {
-      this.emit('test:progress', data)
-    })
-
-    // Test logs
-    this.socket.on('test:log', (data: TestLog) => {
-      this.emit('test:log', data)
-    })
-
-    // Test completed
-    this.socket.on('test:completed', (data: { testId: string }) => {
-      this.emit('test:completed', data)
-      this.stopPollingForTest(data.testId)
-    })
-
-    // Test failed
-    this.socket.on('test:failed', (data: { testId: string; error: string }) => {
-      this.emit('test:failed', data)
-      this.stopPollingForTest(data.testId)
-    })
+    }
   }
 
   disconnect() {
-    if (this.socket) {
-      this.socket.disconnect()
-      this.socket = null
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout)
+      this.reconnectTimeout = null
     }
+
+    if (this.ws) {
+      this.ws.close()
+      this.ws = null
+    }
+    
     this.stopAllPolling()
     this.listeners.clear()
+    this.subscribedTests.clear()
     this.isConnected = false
+  }
+
+  private sendMessage(message: any) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify(message))
+    }
   }
 
   subscribe<T = any>(event: string, callback: (data: T) => void) {
@@ -147,16 +188,41 @@ class WebSocketService {
   }
 
   subscribeToTest(testId: string, callback: (progress: TestProgress) => void) {
+    // Track this subscription
+    this.subscribedTests.add(testId)
+
+    // Subscribe via WebSocket if connected
+    if (this.isConnected) {
+      this.sendMessage({ action: 'subscribe', testId })
+    }
+
     // If polling is enabled, start polling for this test
     if (this.shouldUsePolling) {
       this.startPollingForTest(testId)
     }
 
-    return this.subscribe<TestProgress>('test:progress', (data) => {
+    // Return combined unsubscribe function
+    const unsubscribeFromEvents = this.subscribe<TestProgress>('test:progress', (data) => {
       if (data.testId === testId) {
         callback(data)
       }
     })
+
+    return () => {
+      // Remove from tracked subscriptions
+      this.subscribedTests.delete(testId)
+      
+      // Unsubscribe via WebSocket
+      if (this.isConnected) {
+        this.sendMessage({ action: 'unsubscribe', testId })
+      }
+      
+      // Stop polling
+      this.stopPollingForTest(testId)
+      
+      // Unsubscribe from events
+      unsubscribeFromEvents()
+    }
   }
 
   onTestCompleted(callback: (data: { testId: string }) => void) {

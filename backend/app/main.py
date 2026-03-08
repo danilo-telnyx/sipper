@@ -11,7 +11,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import init_db
 from app.rate_limit import limiter
-from app.routers import auth, organizations, users, credentials, tests, telnyx, dashboard, adhoc_tests
+from app.routers import auth, organizations, users, credentials, tests, telnyx, dashboard, adhoc_tests, websocket_endpoint
 
 # Frontend directory
 FRONTEND_DIR = Path("/app/frontend/dist")
@@ -88,6 +88,9 @@ app.include_router(users.router, prefix="/api")
 app.include_router(credentials.router, prefix="/api")
 app.include_router(tests.router, prefix="/api")
 app.include_router(telnyx.router, prefix="/api")
+
+# WebSocket endpoint (no /api prefix, uses /ws directly)
+app.include_router(websocket_endpoint.router)
 
 
 @app.get("/health")
