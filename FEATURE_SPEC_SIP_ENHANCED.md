@@ -211,36 +211,95 @@ interface SIPMessageParams {
 
 ## Implementation Plan
 
-### Sprint 1: Backend Core (Current)
-- [ ] Add unauthenticated message builders
-- [ ] Add REFER method support
-- [ ] Add REC metadata support
-- [ ] Parameter validation schemas
-- [ ] Backend tests
+### ✅ Sprint 1: Backend Core (COMPLETE - v0.3.0)
+- [x] Add unauthenticated message builders (INVITE, REGISTER, OPTIONS)
+- [x] Add REFER method support (RFC 3515 - unattended & attended transfer)
+- [x] Add REC metadata support (RFC 7865 - session recording)
+- [x] Parameter validation schemas (SIPValidator class)
+- [x] Backend tests (25+ test cases, all passing)
+- [x] Enhanced test schemas (REFERParams, RecordingSessionParams)
+- [x] NOTIFY support for REFER status updates
 
-### Sprint 2: Frontend UI
+**Deliverables**:
+- ✅ `sip-validator.js` (5.8KB, RFC 3261 compliance)
+- ✅ Enhanced `sip-message-builder.js` (+200 lines)
+- ✅ 3 comprehensive test suites
+- ✅ Backend schema validation
+- ✅ Full RFC compliance verification
+
+**What Works Now**:
+```javascript
+// Unauthenticated INVITE
+builder.buildINVITE({ fromUser, fromDomain, toUser, toDomain });
+
+// REFER (call transfer)
+builder.buildREFER({ referTo: 'sip:target@example.com', replaces: '...' });
+
+// Recording INVITE
+builder.buildRecordingINVITE({ 
+  recordingSession: { sessionId, reason: 'Legal', mode: 'always' }
+});
+
+// Validation
+SIPValidator.validateMandatoryParams(params, 'REFER');
+```
+
+### 🔄 Sprint 2: Frontend UI (NEXT - v0.4.0)
 - [ ] SIP Test Builder component
-- [ ] Parameter validation UI
-- [ ] Method-specific forms
-- [ ] Real-time validation feedback
+- [ ] Method selector dropdown (INVITE, REGISTER, OPTIONS, REFER, REC)
+- [ ] Parameter validation UI with real-time feedback
+- [ ] Method-specific forms (conditional fields based on method)
+- [ ] Authentication toggle (unauthenticated vs authenticated)
+- [ ] REFER flow builder (transfer target, replaces header)
+- [ ] Recording metadata form (reason, mode, session-id)
+- [ ] SDP editor for INVITE
 
-### Sprint 3: Help System
-- [ ] Collapsible help panel component
-- [ ] Context detection system
-- [ ] Help content (Markdown files)
-- [ ] RFC reference database
-- [ ] Code sample library
+**Estimated Effort**: 8-12 hours  
+**Files to Create**: ~6 new React components
 
-### Sprint 4: Flow Visualization
-- [ ] SIP flow diagram component
-- [ ] Message sequence renderer
-- [ ] Export functionality
+### 🔄 Sprint 3: Help System (v0.5.0)
+- [ ] Collapsible help panel component (`<ContextualHelpPanel />`)
+- [ ] Context detection system (route-based content)
+- [ ] Help content files (Markdown)
+  - [ ] credentials.md
+  - [ ] sip-invite.md
+  - [ ] sip-register.md
+  - [ ] sip-refer.md
+  - [ ] sip-rec.md
+  - [ ] examples/*.md
+- [ ] RFC reference database (with links to IETF)
+- [ ] Code sample library with copy buttons
+- [ ] Toggle button in navigation bar
+- [ ] Tabbed sections (Guide, Examples, RFCs, Troubleshooting)
 
-### Sprint 5: Integration & Polish
-- [ ] End-to-end testing
+**Estimated Effort**: 10-15 hours  
+**Files to Create**: 1 component + ~10 markdown files
+
+### 🔄 Sprint 4: Flow Visualization (v0.6.0)
+- [ ] SIP flow diagram component (`<SIPFlowDiagram />`)
+- [ ] Message sequence renderer (arrow-based UI)
+- [ ] Color-coding by response class (1xx, 2xx, 3xx, 4xx, 5xx)
+- [ ] Expandable message details (headers, body)
+- [ ] Export as PNG/SVG functionality
+- [ ] Real-time update during test execution
+
+**Estimated Effort**: 6-10 hours  
+**Files to Create**: 2-3 components
+
+### 🔄 Sprint 5: Integration & Polish (v0.7.0)
+- [ ] End-to-end integration tests (Playwright)
 - [ ] Documentation completion
+  - [ ] User guides for each SIP method
+  - [ ] RFC compliance matrix
+  - [ ] Troubleshooting guide
+  - [ ] Example scenarios
 - [ ] Performance optimization
-- [ ] Accessibility audit
+- [ ] Accessibility audit (WCAG 2.1 AA)
+- [ ] Cross-browser testing
+- [ ] Mobile responsiveness
+
+**Estimated Effort**: 8-12 hours  
+**Files to Create**: Test suite + documentation
 
 ## Version Planning
 
