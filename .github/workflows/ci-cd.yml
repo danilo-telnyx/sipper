@@ -37,6 +37,15 @@ jobs:
           pip install pytest pytest-cov
       
       - name: Run backend tests
+        env:
+          JWT_SECRET: test-jwt-secret-for-ci-testing-only
+          SECRET_KEY: test-secret-key-for-ci-testing-only
+          ENCRYPTION_KEY: dGVzdC1lbmNyeXB0aW9uLWtleS1mb3ItY2ktdGVzdGluZy1vbmx5Cg==
+          DB_USER: test
+          DB_PASSWORD: test
+          DB_NAME: test_db
+          DB_HOST: localhost
+          DB_PORT: 5432
         run: |
           cd backend
           PYTHONPATH=/home/runner/work/sipper/sipper/backend pytest tests/ -v --cov=app --cov-report=xml
