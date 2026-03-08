@@ -19,13 +19,13 @@ async def get_dashboard_stats(
 ):
     """Get dashboard statistics for current user's organization."""
     
-    # Calculate date filter
-    now = datetime.now(timezone.utc)
+    # Calculate date filter (timezone-naive for DB compatibility)
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
     date_filters = {
         "7d": now - timedelta(days=7),
         "30d": now - timedelta(days=30),
         "90d": now - timedelta(days=90),
-        "all": datetime(2000, 1, 1, tzinfo=timezone.utc),
+        "all": datetime(2000, 1, 1),
     }
     start_date = date_filters.get(date_range, date_filters["30d"])
     
@@ -163,5 +163,5 @@ async def get_dashboard_stats(
         "recentTests": recent_tests,
         "chartData": chart_data,
         "dateRange": date_range,
-        "generatedAt": now.isoformat()
+        "generatedAt": datetime.now(timezone.utc).isoformat()
     }

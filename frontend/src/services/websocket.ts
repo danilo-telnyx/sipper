@@ -13,10 +13,19 @@ class WebSocketService {
   private listeners: Map<string, Set<(data: any) => void>> = new Map()
   private reconnectAttempts = 0
   private isConnected = false
-  private shouldUsePolling = false
+  private shouldUsePolling = true // Start with polling by default (WebSocket not implemented)
   private pollingIntervals: Map<string, NodeJS.Timeout> = new Map()
+  private wsEnabled = false // WebSocket feature flag - set to true when backend supports it
+  private pollingModeLogged = false // Only log polling mode once
 
   connect() {
+    // Skip WebSocket connection if not enabled
+    if (!this.wsEnabled) {
+      console.info('WebSocket not enabled, using HTTP polling for updates')
+      this.enablePollingFallback()
+      return
+    }
+
     if (this.socket?.connected) return
 
     const token = useAuthStore.getState().token
@@ -165,7 +174,10 @@ class WebSocketService {
   // Polling fallback mechanism
   private enablePollingFallback() {
     this.shouldUsePolling = true
-    console.log('WebSocket fallback: Using HTTP polling for real-time updates')
+    if (!this.pollingModeLogged) {
+      console.info('Using HTTP polling for test updates (WebSocket not yet available)')
+      this.pollingModeLogged = true
+    }
   }
 
   private async startPollingForTest(testId: string) {
