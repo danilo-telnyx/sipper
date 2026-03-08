@@ -119,7 +119,7 @@ export function SIPFlowDiagram({
               )}
             </Button>
 
-            <FlowExport data={data} onExport={onExport} />
+            <FlowExport data={data} diagramRef={diagramRef} onExport={onExport} />
           </div>
         </div>
       </CardHeader>

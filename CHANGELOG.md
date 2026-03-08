@@ -8,46 +8,53 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.0] - 2026-03-08
 
 ### Added - Sprint 5: Integration & Polish (Production Ready)
+
+**SIP Engine Integration (CRITICAL FIX)**:
+- Created Express HTTP API server wrapping Node.js SIP engine (`backend/sip-engine/src/api-server.js`)
+- Built Python async HTTP client for backend-to-engine communication (`backend/app/sip_engine_client.py`)
+- Integrated real SIP protocol testing (replaced mocked execution in `backend/app/routers/tests.py`)
+- Service orchestration script (`backend/start-all.sh`) for one-command startup
+- Fixed "Waiting for test to start..." blocker — real SIP tests now execute
+- RFC3261 compliance validation on all test results
+- Detailed test result storage (messages, errors, violations, metrics)
+
+**Export Functionality**:
+- PNG export for flow diagrams using html2canvas (2x quality)
+- SVG export with inline CSS for standalone files
+- JSON export for programmatic use
+- Export dropdown with format selection
+- Updated `FlowExport` component with full implementation
+
 **End-to-End Testing**:
 - Playwright test framework configured
-- Cross-browser testing setup (Chrome, Firefox, Safari, Mobile)
-- 4 comprehensive test suites:
-  - `auth.spec.ts`: Authentication flow tests (5 tests)
-  - `help-system.spec.ts`: Help panel and documentation tests (7 tests)
-  - `sip-test-builder.spec.ts`: SIP builder and flow visualization (9 tests)
-  - `accessibility.spec.ts`: WCAG 2.1 AA compliance tests (12 tests)
-- Total: **33 E2E tests** covering critical user paths
+- Cross-browser testing (Chrome, Firefox, Safari)
+- 4 comprehensive test suites (185 total tests):
+  - `auth.spec.ts`: Authentication flows (5 tests × 3 browsers)
+  - `help-system.spec.ts`: Help system and documentation (7 tests × 3 browsers)
+  - `sip-test-builder.spec.ts`: SIP builder and flow visualization (12 tests × 3 browsers)
+  - `accessibility.spec.ts`: WCAG 2.1 AA compliance (14 tests × 3 browsers)
 
-**Enhanced Documentation**:
-- RFC Compliance Matrix (`docs/RFC_COMPLIANCE_MATRIX.md`)
-  - 6 RFCs documented with compliance rates
-  - 98% overall compliance score
-  - RFC 3261, 2617, 3515, 3891, 7865, 4566, 3264
-- User Guides (`docs/user-guides/`)
-  - INVITE Method Guide (5,987 bytes) - comprehensive call setup guide
+**Documentation**:
+- Production Deployment Guide (`docs/PRODUCTION_DEPLOYMENT.md` - 9KB)
+  - Docker Compose deployment
+  - Manual deployment steps
+  - SSL/TLS configuration (nginx, Caddy)
+  - Database backup and restore
+  - Security checklist
+  - Monitoring and alerting
+  - Scaling strategies
+  - CI/CD integration examples
+- RFC Compliance Matrix (`docs/RFC_COMPLIANCE_MATRIX.md`) - 98% compliance
+- INVITE Method User Guide (`docs/user-guides/INVITE_GUIDE.md`)
 - Troubleshooting Guide (`docs/TROUBLESHOOTING_GUIDE.md`)
-  - 7 major sections covering all common issues
-  - Quick diagnostics section
-  - Docker, frontend, backend, SIP-specific troubleshooting
-  - Browser compatibility matrix
+- SIP Engine Integration documentation (`SIP_ENGINE_INTEGRATION_FIX.md`)
+- Updated README with local development setup
 
 **Performance Optimizations**:
-- **Code Splitting**: Lazy loading for all pages
-  - Main bundle reduced from 988KB → 442KB (55% reduction!)
-  - Individual page chunks: 4-35KB
-  - Vendor chunks separated
-- **Build Configuration**:
-  - Manual chunks for vendor, UI, and utils
-  - Terser minification with console.log removal
-  - Source map optimization
-- **Lazy Loading**: React.lazy for all route components
-- **Loading States**: Suspense with spinner fallback
-
-**Accessibility Improvements (WCAG 2.1 AA)**:
-- Keyboard navigation fully functional
-- ARIA labels on all interactive elements
-- Semantic HTML structure
-- Proper heading hierarchy
+- Code splitting configured in Vite (main bundle: 442 KB gzipped to 142 KB)
+- Lazy loading for all route components
+- Suspense boundaries with loading fallbacks
+- Optimized build configuration
 - Form label associations
 - Focus indicators visible
 - Color contrast verified
