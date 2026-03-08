@@ -29,6 +29,8 @@ export function CredentialForm({
 }: CredentialFormProps) {
   const [showPassword, setShowPassword] = useState(false)
   const [telnyxEnabled, setTelnyxEnabled] = useState(false)
+  const [telnyxLoading, setTelnyxLoading] = useState(false)
+  const [telnyxError, setTelnyxError] = useState<string | null>(null)
 
   const {
     register,
@@ -53,6 +55,9 @@ export function CredentialForm({
         },
   })
 
+  const telnyxApiKey = watch('telnyxApiKey')
+  const telnyxConnectionId = watch('telnyxConnectionId')
+
   const transport = watch('transport')
 
   // Auto-adjust port based on transport
@@ -62,6 +67,66 @@ export function CredentialForm({
       setValue('port', defaultPorts[transport as keyof typeof defaultPorts])
     }
   }, [transport, credential, setValue])
+
+  // Fetch Telnyx credentials when both Connection ID and API Key are provided
+  useEffect(() => {
+    const fetchTelnyxCredentials = async () => {
+      if (!telnyxEnabled || !telnyxConnectionId || !telnyxApiKey) {
+        return
+      }
+
+      // Require at least 10 characters for Connection ID (basic validation)
+      if (telnyxConnectionId.length < 10 || telnyxApiKey.length < 20) {
+        return
+      }
+
+      setTelnyxLoading(true)
+      setTelnyxError(null)
+
+      try {
+        const response = await fetch('/api/telnyx/fetch-credentials', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            connection_id: telnyxConnectionId,
+            api_key: telnyxApiKey,
+          }),
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.detail || 'Failed to fetch Telnyx credentials')
+        }
+
+        const data = await response.json()
+
+        // Auto-populate form fields
+        setValue('name', data.name)
+        setValue('username', data.username)
+        setValue('password', data.password)
+        setValue('domain', data.domain)
+        setValue('port', data.port)
+        setValue('transport', data.transport)
+        if (data.proxy) {
+          setValue('proxy', data.proxy)
+        }
+
+        setTelnyxError(null)
+      } catch (error) {
+        setTelnyxError(
+          error instanceof Error ? error.message : 'Failed to fetch credentials'
+        )
+      } finally {
+        setTelnyxLoading(false)
+      }
+    }
+
+    // Debounce the fetch to avoid excessive API calls
+    const timeoutId = setTimeout(fetchTelnyxCredentials, 800)
+    return () => clearTimeout(timeoutId)
+  }, [telnyxEnabled, telnyxConnectionId, telnyxApiKey, setValue])
 
   const validateDomain = (value: string) => {
     const domainRegex = /^[a-zA-Z0-9][a-zA-Z0-9-_.]+[a-zA-Z0-9]$/
@@ -279,26 +344,45 @@ export function CredentialForm({
         {telnyxEnabled && (
           <div className="space-y-4 pl-4 border-l-2 border-muted">
             <div className="space-y-2">
-              <Label htmlFor="telnyxConnectionId">Telnyx Connection ID</Label>
+              <Label htmlFor="telnyxConnectionId">
+                Telnyx Connection ID <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="telnyxConnectionId"
                 {...register('telnyxConnectionId')}
-                placeholder="1234567890"
+                placeholder="1234567890123456"
+                disabled={telnyxLoading}
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="telnyxApiKey">Telnyx API Key</Label>
+              <Label htmlFor="telnyxApiKey">
+                Telnyx API Key <span className="text-destructive">*</span>
+              </Label>
               <Input
                 id="telnyxApiKey"
                 type="password"
                 {...register('telnyxApiKey')}
                 placeholder="KEY..."
                 autoComplete="off"
+                disabled={telnyxLoading}
               />
             </div>
-            <p className="text-xs text-muted-foreground">
-              Credentials will be auto-populated from Telnyx
-            </p>
+            {telnyxLoading && (
+              <p className="text-xs text-blue-600 flex items-center gap-1">
+                <span className="animate-spin">⏳</span> Fetching credentials from Telnyx...
+              </p>
+            )}
+            {telnyxError && (
+              <p className="text-xs text-destructive flex items-center gap-1">
+                <AlertCircle className="h-3 w-3" />
+                {telnyxError}
+              </p>
+            )}
+            {!telnyxLoading && !telnyxError && (
+              <p className="text-xs text-muted-foreground">
+                Enter both fields above to auto-populate SIP credentials
+              </p>
+            )}
           </div>
         )}
       </div>

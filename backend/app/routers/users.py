@@ -9,6 +9,7 @@ from app.models import User, Role, UserRole
 from app.schemas import UserCreate, UserUpdate, UserResponse, RoleResponse
 from app.auth import hash_password
 from app.auth.dependencies import get_current_active_user
+from app.auth.permissions import check_is_admin, check_is_admin_or_manager
 
 router = APIRouter(prefix="/users", tags=["Users"])
 
@@ -56,10 +57,9 @@ async def get_user(
 async def create_user(
     user_data: UserCreate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_is_admin_or_manager)
 ):
-    """Create a new user (admin only)."""
-    # TODO: Check if current user is admin
+    """Create a new user (admin/manager only)."""
     
     # Check if email already exists
     result = await db.execute(select(User).where(User.email == user_data.email))
@@ -121,10 +121,9 @@ async def update_user(
 async def delete_user(
     user_id: UUID,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_is_admin)
 ):
     """Delete user (admin only)."""
-    # TODO: Check if current user is admin
     
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()
@@ -183,10 +182,9 @@ async def update_user_roles(
     user_id: UUID,
     role_ids: list[UUID],
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_is_admin)
 ):
-    """Update user's roles (replace existing)."""
-    # TODO: Check if current user is admin
+    """Update user's roles (admin only)."""
     
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()

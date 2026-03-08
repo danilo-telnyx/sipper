@@ -115,10 +115,35 @@ The application will **refuse to start** if weak/default secrets are detected.
 - ✅ Multi-tenant organization isolation
 - ✅ Role-based access control (Admin, Manager, User)
 - ✅ Encrypted SIP credential storage
+- ✅ **Telnyx Auto-Import** — One-click import of SIP credentials from Telnyx API
 - ✅ WebSocket real-time test monitoring
 - ✅ Telnyx SIP trunk integration
 - ✅ Test history and result analytics
 - ✅ Docker-ready deployment
+- ✅ Comprehensive test coverage
+
+## 🌟 Telnyx Auto-Import
+
+Sipper can automatically import SIP credentials directly from your Telnyx account:
+
+1. **Open Credentials Manager**
+2. **Click "Add Credential"**
+3. **Toggle "Telnyx Integration" ON**
+4. **Enter your Telnyx credentials:**
+   - **Connection ID** — Find this in your Telnyx Portal under SIP > Connections
+   - **API Key** — Generate one in Telnyx Portal under API Keys
+5. **Wait ~1 second** — All SIP fields auto-populate!
+6. **Click "Add Credential"** to save
+
+**Auto-populated fields:**
+- Credential name (from connection name)
+- SIP username
+- SIP password
+- SIP domain (sip.telnyx.com)
+- Port (5060)
+- Transport (UDP)
+
+**Note:** Your Telnyx API key is only used for the import request and is never stored.
 
 ## 🛠️ Development
 
@@ -134,6 +159,9 @@ docker-compose restart
 
 # Stop services
 docker-compose down
+
+# Run tests
+docker exec sipper-app pytest backend/tests/ -v
 ```
 
 ## 🔧 Development Scripts

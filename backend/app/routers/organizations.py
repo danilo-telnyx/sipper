@@ -8,6 +8,7 @@ from app.database import get_db
 from app.models import User, Organization
 from app.schemas import OrganizationResponse, OrganizationUpdate
 from app.auth.dependencies import get_current_active_user
+from app.auth.permissions import check_is_admin, check_is_admin_or_manager
 
 router = APIRouter(prefix="/orgs", tags=["Organizations"])
 
@@ -15,10 +16,9 @@ router = APIRouter(prefix="/orgs", tags=["Organizations"])
 @router.get("", response_model=list[OrganizationResponse])
 async def list_organizations(
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_is_admin)
 ):
-    """List all organizations (admin only in production)."""
-    # TODO: Add admin check
+    """List all organizations (admin only)."""
     result = await db.execute(select(Organization))
     organizations = result.scalars().all()
     return organizations
@@ -55,9 +55,9 @@ async def update_organization(
     org_id: UUID,
     update_data: OrganizationUpdate,
     db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
+    current_user: User = Depends(check_is_admin_or_manager)
 ):
-    """Update organization."""
+    """Update organization (admin/manager only)."""
     # Check if user belongs to this organization
     if current_user.organization_id != org_id:
         raise HTTPException(
