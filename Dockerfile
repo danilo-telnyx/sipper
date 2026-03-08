@@ -34,11 +34,18 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install runtime dependencies
+# Install runtime dependencies including Node.js
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     libpq5 \
     curl \
+    ca-certificates \
+    gnupg \
+    && mkdir -p /etc/apt/keyrings \
+    && curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg \
+    && echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list \
+    && apt-get update \
+    && apt-get install -y nodejs \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy Python packages from builder
@@ -50,6 +57,15 @@ COPY backend/ ./backend/
 
 # Copy built frontend
 COPY --from=frontend-builder /app/frontend/dist ./frontend/dist
+
+# Copy entrypoint script
+COPY docker-entrypoint.sh /app/
+RUN chmod +x /app/docker-entrypoint.sh
+
+# Install SIP engine dependencies
+WORKDIR /app/backend/sip-engine
+RUN npm ci --production
+WORKDIR /app
 
 # Create non-root user
 RUN useradd -m -u 1000 sipper && \
@@ -68,4 +84,4 @@ EXPOSE 8000
 
 # Run application
 WORKDIR /app/backend
-CMD ["python", "-m", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["/app/docker-entrypoint.sh"]
