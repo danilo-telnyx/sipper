@@ -23,7 +23,7 @@ async def test_fetch_telnyx_credentials_success():
     # Create mock response
     mock_response = AsyncMock()
     mock_response.status_code = 200
-    mock_response.json.return_value = mock_response_data
+    mock_response.json = AsyncMock(return_value=mock_response_data)
     
     # Mock httpx client
     with patch('app.routers.telnyx.httpx.AsyncClient') as mock_client:
@@ -111,7 +111,7 @@ async def test_fetch_telnyx_credentials_missing_sip_data():
     
     mock_response = AsyncMock()
     mock_response.status_code = 200
-    mock_response.json.return_value = mock_response_data
+    mock_response.json = AsyncMock(return_value=mock_response_data)
     
     with patch('app.routers.telnyx.httpx.AsyncClient') as mock_client:
         mock_client.return_value.__aenter__.return_value.get = AsyncMock(return_value=mock_response)
