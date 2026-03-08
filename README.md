@@ -249,6 +249,71 @@ docker-compose build --no-cache
 docker-compose up -d
 ```
 
+## 💻 Local Development (Without Docker)
+
+**Prerequisites:**
+- Python 3.11+
+- Node.js 18+
+- PostgreSQL 14+
+
+**Setup:**
+
+1. **Backend & SIP Engine:**
+```bash
+cd backend
+
+# Create Python virtual environment
+python3 -m venv venv
+source venv/bin/activate
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Install Node.js SIP engine dependencies
+cd sip-engine
+npm install
+cd ..
+
+# Setup database
+createdb sipper
+alembic upgrade head
+
+# Start both services (recommended)
+./start-all.sh
+```
+
+This starts:
+- **Python FastAPI backend** on `http://localhost:8000`
+- **Node.js SIP Engine** on `http://localhost:5001`
+
+**Or start services separately:**
+
+```bash
+# Terminal 1: SIP Engine
+cd backend/sip-engine
+npm start
+
+# Terminal 2: FastAPI backend
+cd backend
+source venv/bin/activate
+uvicorn app.main:app --reload --port 8000
+```
+
+2. **Frontend:**
+```bash
+cd frontend
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+Frontend runs on `http://localhost:5173` and proxies API requests to backend.
+
+**Important:** The SIP Engine must be running for tests to execute! The backend calls the SIP Engine via HTTP to run actual SIP protocol tests.
+
 ## ⚙️ Development vs Production
 
 The application automatically adjusts based on `APP_ENV`:

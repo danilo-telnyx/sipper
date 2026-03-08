@@ -15,55 +15,145 @@ router = APIRouter(prefix="/tests", tags=["Tests"])
 
 async def execute_sip_test(test_run_id: UUID):
     """
-    Background task to execute SIP test.
-    This is a placeholder - actual SIP testing logic would go here.
+    Background task to execute SIP test via Node.js SIP Engine.
     Creates its own DB session to avoid lifecycle issues.
     """
     from app.database import AsyncSessionLocal
+    from app.sip_engine_client import get_sip_engine_client
     
     # Create new session for background task
     async with AsyncSessionLocal() as db:
         try:
-            # Fetch test run
-            result = await db.execute(select(TestRun).where(TestRun.id == test_run_id))
-            test_run = result.scalar_one_or_none()
+            # Fetch test run and credential
+            result = await db.execute(
+                select(TestRun, SIPCredential)
+                .outerjoin(SIPCredential, TestRun.credential_id == SIPCredential.id)
+                .where(TestRun.id == test_run_id)
+            )
+            row = result.first()
             
-            if not test_run:
+            if not row:
                 return
+            
+            test_run, credential = row
             
             # Update status to running
             test_run.status = "running"
             await db.commit()
             
-            # Simulate test execution
-            # TODO: Implement actual SIP testing logic (registration, call, message)
-            steps = [
-                {"step": "connect", "status": "success", "message": "Connected to SIP server"},
-                {"step": "register", "status": "success", "message": "Registration successful"},
-                {"step": "call", "status": "success", "message": "Call completed"},
-            ]
+            # Prepare SIP engine client
+            sip_client = get_sip_engine_client()
             
-            for step in steps:
+            # Build credentials payload
+            credentials = None
+            if credential:
+                credentials = {
+                    "username": credential.username,
+                    "password": credential.password,
+                    "host": credential.domain,
+                    "domain": credential.domain,
+                    "port": credential.port or 5060
+                }
+            
+            # Get test config from metadata
+            config = test_run.metadata or {}
+            
+            # Map test type to SIP engine test type
+            test_type_map = {
+                "registration": "register",
+                "call": "call",
+                "message": "options"  # Using OPTIONS as message placeholder
+            }
+            sip_test_type = test_type_map.get(test_run.test_type, test_run.test_type)
+            
+            # Execute test via SIP engine
+            result = await sip_client.run_test(
+                test_type=sip_test_type,
+                credentials=credentials,
+                config=config
+            )
+            
+            # Store test messages as results
+            for msg in result.get("messages", []):
+                direction = msg.get("direction", "unknown")
+                method = msg.get("method") or msg.get("statusCode", "unknown")
+                
                 test_result = TestResult(
                     test_run_id=test_run_id,
-                    step_name=step["step"],
-                    status=step["status"],
-                    message=step["message"],
+                    step_name=f"{direction}_{method}",
+                    status="success" if result.get("success") else "warning",
+                    message=str(msg),
+                    details={"message": msg}
+                )
+                db.add(test_result)
+            
+            # Store errors
+            for error in result.get("errors", []):
+                test_result = TestResult(
+                    test_run_id=test_run_id,
+                    step_name="error",
+                    status="error",
+                    message=error,
                     details={}
                 )
                 db.add(test_result)
             
+            # Store RFC violations
+            for violation in result.get("violations", []):
+                test_result = TestResult(
+                    test_run_id=test_run_id,
+                    step_name="rfc_violation",
+                    status="warning",
+                    message=violation,
+                    details={}
+                )
+                db.add(test_result)
+            
+            # Store summary
+            summary_result = TestResult(
+                test_run_id=test_run_id,
+                step_name="summary",
+                status="success" if result.get("success") else "failed",
+                message=f"Test {result.get('testName')} completed in {result.get('duration')}ms",
+                details={
+                    "metrics": result.get("metrics", {}),
+                    "duration": result.get("duration"),
+                    "passed": result.get("success")
+                }
+            )
+            db.add(summary_result)
+            
             # Update test run status
-            test_run.status = "completed"
+            test_run.status = "completed" if result.get("success") else "failed"
             test_run.completed_at = datetime.now(timezone.utc)
             
             await db.commit()
+            
         except Exception as e:
             # Log error and mark test as failed
+            print(f"Test execution error: {str(e)}")
             await db.rollback()
-            if test_run:
-                test_run.status = "failed"
-                await db.commit()
+            
+            # Try to mark as failed
+            try:
+                result = await db.execute(select(TestRun).where(TestRun.id == test_run_id))
+                test_run = result.scalar_one_or_none()
+                if test_run:
+                    test_run.status = "failed"
+                    
+                    # Add error result
+                    error_result = TestResult(
+                        test_run_id=test_run_id,
+                        step_name="execution_error",
+                        status="error",
+                        message=str(e),
+                        details={"exception": str(e)}
+                    )
+                    db.add(error_result)
+                    
+                    await db.commit()
+            except Exception:
+                pass  # Best effort
 
 
 @router.post("/run", response_model=TestRunResponse, status_code=status.HTTP_202_ACCEPTED)
