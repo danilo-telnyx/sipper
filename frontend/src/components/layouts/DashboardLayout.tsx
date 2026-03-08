@@ -22,6 +22,7 @@ import {
   Building2,
   X,
   HelpCircle,
+  BookOpen,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { wsService } from '../../services/websocket'
@@ -224,6 +225,32 @@ export function DashboardLayout() {
               )
             })}
           </nav>
+
+          {/* Sidebar Footer with Documentation and Versions */}
+          <div className="mt-auto pt-6 border-t">
+            <Link
+              to="/documentation"
+              className={`flex items-center gap-3 px-4 py-2 rounded-md transition-colors text-sm ${
+                location.pathname === '/documentation'
+                  ? 'bg-primary text-primary-foreground font-medium'
+                  : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+              }`}
+            >
+              <BookOpen className="h-4 w-4" aria-hidden="true" />
+              <span>Documentation</span>
+            </Link>
+
+            <div className="px-4 py-3 text-xs text-muted-foreground space-y-1">
+              <div className="flex justify-between">
+                <span>Frontend:</span>
+                <span className="font-mono">v0.6.0</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Backend:</span>
+                <span className="font-mono">v0.6.0</span>
+              </div>
+            </div>
+          </div>
         </aside>
 
         {/* Mobile Sidebar */}

@@ -146,6 +146,23 @@ The application will **refuse to start** if weak/default secrets are detected.
 - ✅ **7 Context Pages** — Dashboard, Credentials, Test Runners, Results, Admin
 - ✅ **Code Sample Library** — One-click copy with syntax highlighting
 
+### 🆕 Flow Visualization + Documentation (v0.6.0)
+- ✅ **SIP Flow Diagrams** — Interactive sequence diagrams
+  - Color-coded response classes (1xx-5xx)
+  - Expandable message details (headers, body, raw)
+  - Zoom controls (50%-200%)
+  - Fullscreen mode
+  - Real-time updates during tests
+  - JSON export (PNG/SVG coming soon)
+- ✅ **Interactive Documentation** — Comprehensive guide with workflows
+  - 5 tabbed sections: Overview, Workflows, Features, API, Security
+  - Visual workflow diagrams (Registration, Call Setup, Transfer)
+  - Sprint history timeline
+  - API endpoint reference
+  - WebSocket events documentation
+  - Security best practices
+- ✅ **Version Display** — FE/BE versions in sidebar footer
+
 ## 🌟 Telnyx Auto-Import
 
 Sipper can automatically import SIP credentials directly from your Telnyx account:

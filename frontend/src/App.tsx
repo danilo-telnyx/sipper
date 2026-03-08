@@ -14,10 +14,12 @@ import { DashboardPage } from './pages/DashboardPage'
 import { CredentialsPage } from './pages/CredentialsPage'
 import { TestRunnerPage } from './pages/TestRunnerPage'
 import { SIPTestBuilderPage } from './pages/SIPTestBuilderPage'
+import { FlowVisualizationDemoPage } from './pages/FlowVisualizationDemoPage'
 import { TestResultsPage } from './pages/TestResultsPage'
 import { TestResultDetailPage } from './pages/TestResultDetailPage'
 import { UsersPage } from './pages/UsersPage'
 import { OrganizationPage } from './pages/OrganizationPage'
+import { DocumentationPage } from './pages/docs/DocumentationPage'
 
 import './App.css'
 
@@ -54,6 +56,8 @@ function App() {
             <Route path="/credentials" element={<CredentialsPage />} />
             <Route path="/test-runner" element={<TestRunnerPage />} />
             <Route path="/sip-test-builder" element={<SIPTestBuilderPage />} />
+            <Route path="/flow-visualization" element={<FlowVisualizationDemoPage />} />
+            <Route path="/documentation" element={<DocumentationPage />} />
             <Route path="/test-results" element={<TestResultsPage />} />
             <Route path="/test-results/:id" element={<TestResultDetailPage />} />
             

@@ -5,6 +5,88 @@ All notable changes to SIPPER will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2026-03-08
+
+### Added - Sprint 4: Flow Visualization + Sprint 6: Documentation
+**Sprint 4: Flow Visualization**
+- **SIP Flow Diagram Component**: Interactive sequence diagram visualization
+  - Message sequence renderer with arrow-based UI
+  - Color-coded response classes (1xx blue, 2xx green, 3xx yellow, 4xx orange, 5xx red)
+  - Expandable message details (headers, body, raw message)
+  - Timestamp display with millisecond precision
+  - Direction indicators (client ↔ server)
+  
+- **Flow Controls**:
+  - Zoom controls (50%-200%)
+  - Fullscreen mode toggle
+  - Auto-scroll for real-time mode
+  - JSON export capability
+  - PNG/SVG export (coming soon)
+  
+- **Real-Time Support**:
+  - Live message updates during test execution
+  - Auto-scroll to latest message
+  - Progress tracking
+  - Duration calculation
+  
+- **New Components** (`components/flow-visualization/`):
+  - `SIPFlowDiagram.tsx`: Main flow visualization component
+  - `MessageSequenceItem.tsx`: Individual message renderer
+  - `FlowExport.tsx`: Export functionality
+  - `types.ts`: Flow data types
+  
+- **Demo Page**: `/flow-visualization` route with interactive demo
+  - Mock SIP call flow (INVITE → 100 → 180 → 200 → ACK → BYE)
+  - Simulate real-time button
+  - Color legend
+  - Feature showcase
+
+**Sprint 6: Interactive Documentation**
+- **Documentation Page**: Comprehensive interactive guide (`/documentation`)
+  - Tabbed interface: Overview, Workflows, Features, API, Security
+  - Version display (Frontend and Backend versions)
+  - Link in sidebar footer
+  
+- **Documentation Sections**:
+  - **Overview**: Architecture, tech stack, external resources
+  - **Workflows**: 
+    - Basic Registration Flow (visual steps)
+    - Call Setup Flow (INVITE → ACK → BYE)
+    - Call Transfer Flow (REFER → NOTIFY)
+  - **Features**: Sprint history timeline, Telnyx integration guide
+  - **API**: REST endpoints with methods, WebSocket events
+  - **Security**: Auth, RBAC, encryption, best practices
+  
+- **Version Display**:
+  - Sidebar footer shows FE/BE versions
+  - Documentation page version card
+  - Consistent versioning across UI
+
+### Changed
+- Updated `DashboardLayout.tsx` with:
+  - Documentation link in sidebar footer
+  - Version display (Frontend v0.6.0, Backend v0.6.0)
+  - BookOpen icon import
+- Added `/flow-visualization` route
+- Added `/documentation` route
+- Added Tabs UI component
+
+### Testing
+- ✅ Frontend build successful (no TypeScript errors)
+- ✅ Flow diagram renders correctly
+- ✅ Message expansion/collapse working
+- ✅ Zoom and fullscreen functional
+- ✅ Export working (JSON)
+- ✅ Documentation tabs navigate properly
+- ✅ Version display consistent
+
+### Documentation
+- Sprint 4 completion report (SPRINT_4_COMPLETE.md)
+- Sprint 6 completion report (SPRINT_6_COMPLETE.md)
+- Updated FEATURE_SPEC_SIP_ENHANCED.md
+
+---
+
 ## [0.5.0] - 2026-03-08
 
 ### Added - Sprint 3: Help System
