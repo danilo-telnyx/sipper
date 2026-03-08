@@ -13,6 +13,7 @@ import { RegisterPage } from './pages/auth/RegisterPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CredentialsPage } from './pages/CredentialsPage'
 import { TestRunnerPage } from './pages/TestRunnerPage'
+import { SIPTestBuilderPage } from './pages/SIPTestBuilderPage'
 import { TestResultsPage } from './pages/TestResultsPage'
 import { TestResultDetailPage } from './pages/TestResultDetailPage'
 import { UsersPage } from './pages/UsersPage'
@@ -52,6 +53,7 @@ function App() {
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/credentials" element={<CredentialsPage />} />
             <Route path="/test-runner" element={<TestRunnerPage />} />
+            <Route path="/sip-test-builder" element={<SIPTestBuilderPage />} />
             <Route path="/test-results" element={<TestResultsPage />} />
             <Route path="/test-results/:id" element={<TestResultDetailPage />} />
             

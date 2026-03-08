@@ -244,18 +244,25 @@ builder.buildRecordingINVITE({
 SIPValidator.validateMandatoryParams(params, 'REFER');
 ```
 
-### 🔄 Sprint 2: Frontend UI (NEXT - v0.4.0)
-- [ ] SIP Test Builder component
-- [ ] Method selector dropdown (INVITE, REGISTER, OPTIONS, REFER, REC)
-- [ ] Parameter validation UI with real-time feedback
-- [ ] Method-specific forms (conditional fields based on method)
-- [ ] Authentication toggle (unauthenticated vs authenticated)
-- [ ] REFER flow builder (transfer target, replaces header)
-- [ ] Recording metadata form (reason, mode, session-id)
-- [ ] SDP editor for INVITE
+### ✅ Sprint 2: Frontend UI (COMPLETE - v0.4.0)
+- [x] SIP Test Builder component
+- [x] Method selector dropdown (INVITE, REGISTER, OPTIONS, REFER, REC)
+- [x] Parameter validation UI with real-time feedback
+- [x] Method-specific forms (conditional fields based on method)
+- [x] Authentication toggle (unauthenticated vs authenticated)
+- [x] REFER flow builder (transfer target, replaces header)
+- [x] Recording metadata form (reason, mode, session-id)
+- [x] SDP editor for INVITE
+- [x] New route: `/sip-test-builder`
+- [x] Integration with existing routing
 
-**Estimated Effort**: 8-12 hours  
-**Files to Create**: ~6 new React components
+**Deliverables**:
+- ✅ 8 new React components in `components/sip-test-builder/`
+- ✅ Extended type system (`types/sip.ts`)
+- ✅ Frontend validator (`utils/sip-validator.ts`)
+- ✅ UI components (Alert, Textarea)
+- ✅ Dedicated page: `SIPTestBuilderPage.tsx`
+- ✅ Build verified (no TypeScript errors)
 
 ### 🔄 Sprint 3: Help System (v0.5.0)
 - [ ] Collapsible help panel component (`<ContextualHelpPanel />`)

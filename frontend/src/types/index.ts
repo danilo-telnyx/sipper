@@ -223,3 +223,6 @@ export interface ExportRequest {
   format: ExportFormat
   includeDetails?: boolean
 }
+
+// SIP Test Builder Types (Sprint 2)
+export * from './sip'

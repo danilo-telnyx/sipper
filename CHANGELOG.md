@@ -5,6 +5,70 @@ All notable changes to SIPPER will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-03-08
+
+### Added - Sprint 2: Frontend SIP Test Builder UI
+- **SIP Test Builder Component**: Comprehensive UI for enhanced SIP testing
+  - Method selector: INVITE, REGISTER, OPTIONS, REFER with visual cards
+  - Authentication toggle: Switch between authenticated/unauthenticated flows
+  - Dynamic parameter forms: Conditional fields based on selected method
+  - Real-time validation: RFC compliance feedback with error/warning badges
+  
+- **Method-Specific Features**:
+  - **INVITE**: SDP editor with template, recording metadata form (RFC 7865)
+  - **REGISTER**: Standard SIP registration parameters
+  - **OPTIONS**: Capability discovery (typically unauthenticated)
+  - **REFER**: Call transfer builder with blind/attended transfer support (RFC 3515)
+  
+- **New Components** (`components/sip-test-builder/`):
+  - `SIPTestBuilder.tsx`: Main orchestration component
+  - `MethodSelector.tsx`: Method selection with icons and complexity badges
+  - `AuthenticationToggle.tsx`: Auth flow toggle with descriptions
+  - `ParameterForm.tsx`: Base SIP parameters (From, To, credentials)
+  - `ValidationFeedback.tsx`: Real-time RFC validation display
+  - `REFERBuilder.tsx`: Call transfer parameters (Refer-To, Replaces)
+  - `RecordingMetadataForm.tsx`: Session recording metadata (RFC 7865)
+  - `SDPEditor.tsx`: SDP editing with template and field explanations
+  
+- **Type System Extensions** (`types/sip.ts`):
+  - SIP method types and parameters
+  - Recording session metadata types
+  - Validation result types
+  - Method metadata for UI
+  
+- **Frontend Validation** (`utils/sip-validator.ts`):
+  - RFC 3261 mandatory parameter validation
+  - Method-specific validation rules
+  - SDP basic structure validation
+  - REFER Replaces header validation
+  - URI and domain format helpers
+  
+- **New UI Components**:
+  - `Alert`: Alert notifications (destructive, warning variants)
+  - `Textarea`: Multi-line text input for SDP editing
+  
+- **New Page**: `/sip-test-builder` route
+  - Dedicated page for enhanced SIP testing
+  - Feature highlights showcase
+  - Navigation to/from classic test runner
+  - RFC compliance information
+
+### Changed
+- Extended type exports in `types/index.ts`
+- Added UUID package dependency for recording session IDs
+- Updated routing in `App.tsx`
+
+### Testing
+- ✅ Frontend build successful (no TypeScript errors)
+- ✅ Component compilation verified
+- ✅ Validation logic tested
+
+### Documentation
+- Updated `FEATURE_SPEC_SIP_ENHANCED.md` (Sprint 2 complete)
+- Sprint 2 deliverables documented
+
+---
+
 ## [0.3.0] - 2026-03-08
 
 ### Added - Sprint 1: Enhanced SIP Backend Core

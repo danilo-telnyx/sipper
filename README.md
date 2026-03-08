@@ -122,6 +122,17 @@ The application will **refuse to start** if weak/default secrets are detected.
 - ✅ Docker-ready deployment
 - ✅ Comprehensive test coverage
 
+### 🆕 Enhanced SIP Testing (v0.4.0)
+- ✅ **Enhanced SIP Test Builder** — Advanced UI for protocol-specific testing
+  - Method selector: INVITE, REGISTER, OPTIONS, REFER
+  - Authentication toggle: Test authenticated/unauthenticated flows
+  - Real-time RFC validation with error/warning feedback
+- ✅ **REFER Support (RFC 3515)** — Call transfer testing (blind & attended)
+- ✅ **Session Recording (RFC 7865)** — Recording metadata for compliance
+- ✅ **Unauthenticated Messages** — Test server behavior without auth
+- ✅ **SDP Editor** — Session Description Protocol editing with templates
+- ✅ **Parameter Validation** — Comprehensive RFC 3261 compliance checks
+
 ## 🌟 Telnyx Auto-Import
 
 Sipper can automatically import SIP credentials directly from your Telnyx account:
