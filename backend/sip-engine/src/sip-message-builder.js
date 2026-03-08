@@ -372,6 +372,203 @@ export class SIPMessageBuilder {
   }
 
   /**
+   * Build REFER request (RFC 3515 - Call Transfer)
+   */
+  buildREFER(params) {
+    const {
+      fromUser,
+      fromDomain,
+      toUser,
+      toDomain,
+      referTo,
+      referredBy = null,
+      replaces = null,
+      callId,
+      cseq = this.generateCSeq(),
+      fromTag,
+      toTag = null,
+      branch = this.generateBranch(),
+      contact = `sip:${fromUser}@${this.localIP}:${this.localPort}`,
+      extraHeaders = {}
+    } = params;
+
+    if (!referTo) {
+      throw new Error('REFER requires referTo parameter (target URI)');
+    }
+
+    const requestURI = `sip:${toUser}@${toDomain}`;
+    const from = `<sip:${fromUser}@${fromDomain}>;tag=${fromTag}`;
+    const to = toTag ? `<sip:${toUser}@${toDomain}>;tag=${toTag}` : `<sip:${toUser}@${toDomain}>`;
+    const via = `SIP/2.0/${this.transport} ${this.localIP}:${this.localPort};branch=${branch}`;
+
+    let headers = [
+      `REFER ${requestURI} SIP/2.0`,
+      `Via: ${via}`,
+      `Max-Forwards: 70`,
+      `From: ${from}`,
+      `To: ${to}`,
+      `Contact: <${contact}>`,
+      `Call-ID: ${callId}`,
+      `CSeq: ${cseq} REFER`,
+      `Refer-To: <${referTo}>`,
+      `User-Agent: ${this.userAgent}`
+    ];
+
+    // Add Referred-By if provided (RFC 3892)
+    if (referredBy) {
+      headers.push(`Referred-By: <${referredBy}>`);
+    }
+
+    // Add Replaces for attended transfer (RFC 3891)
+    if (replaces) {
+      headers.push(`Replaces: ${replaces}`);
+    }
+
+    // Add extra headers
+    Object.entries(extraHeaders).forEach(([key, value]) => {
+      headers.push(`${key}: ${value}`);
+    });
+
+    headers.push('Content-Length: 0');
+    headers.push('');
+
+    return {
+      message: headers.join('\r\n'),
+      metadata: { callId, cseq, fromTag, toTag, branch, method: 'REFER', referTo }
+    };
+  }
+
+  /**
+   * Build NOTIFY request (for REFER status updates, RFC 3515)
+   */
+  buildNOTIFY(params) {
+    const {
+      fromUser,
+      fromDomain,
+      toUser,
+      toDomain,
+      callId,
+      cseq = this.generateCSeq(),
+      fromTag,
+      toTag,
+      branch = this.generateBranch(),
+      event = 'refer',
+      subscriptionState = 'active',
+      contentType = 'message/sipfrag',
+      body = '',
+      extraHeaders = {}
+    } = params;
+
+    const requestURI = `sip:${toUser}@${toDomain}`;
+    const from = `<sip:${fromUser}@${fromDomain}>;tag=${fromTag}`;
+    const to = `<sip:${toUser}@${toDomain}>;tag=${toTag}`;
+    const via = `SIP/2.0/${this.transport} ${this.localIP}:${this.localPort};branch=${branch}`;
+
+    let headers = [
+      `NOTIFY ${requestURI} SIP/2.0`,
+      `Via: ${via}`,
+      `Max-Forwards: 70`,
+      `From: ${from}`,
+      `To: ${to}`,
+      `Call-ID: ${callId}`,
+      `CSeq: ${cseq} NOTIFY`,
+      `Event: ${event}`,
+      `Subscription-State: ${subscriptionState}`,
+      `User-Agent: ${this.userAgent}`
+    ];
+
+    // Add extra headers
+    Object.entries(extraHeaders).forEach(([key, value]) => {
+      headers.push(`${key}: ${value}`);
+    });
+
+    // Add body if provided
+    if (body) {
+      headers.push(`Content-Type: ${contentType}`);
+      headers.push(`Content-Length: ${Buffer.byteLength(body)}`);
+      headers.push('');
+      headers.push(body);
+    } else {
+      headers.push('Content-Length: 0');
+      headers.push('');
+    }
+
+    return {
+      message: headers.join('\r\n'),
+      metadata: { callId, cseq, fromTag, toTag, branch, method: 'NOTIFY', event }
+    };
+  }
+
+  /**
+   * Build INVITE with Recording Session (RFC 7865)
+   */
+  buildRecordingINVITE(params) {
+    const {
+      recordingSession,
+      ...inviteParams
+    } = params;
+
+    if (!recordingSession) {
+      throw new Error('Recording INVITE requires recordingSession parameter');
+    }
+
+    const {
+      sessionId,
+      reason = 'QualityAssurance',
+      recordingUri,
+      mode = 'always'
+    } = recordingSession;
+
+    if (!sessionId) {
+      throw new Error('Recording session requires sessionId (UUID)');
+    }
+
+    // Build Recording-Session header (RFC 7865 Section 4.1)
+    const recordingSessionHeader = recordingUri 
+      ? `<${recordingUri}>;reason=${reason};mode=${mode};session-id=${sessionId}`
+      : `<urn:uuid:${sessionId}>;reason=${reason};mode=${mode}`;
+
+    // Add Recording-Session to extraHeaders
+    const extraHeaders = {
+      ...inviteParams.extraHeaders,
+      'Recording-Session': recordingSessionHeader
+    };
+
+    // Build standard INVITE with Recording-Session header
+    return this.buildINVITE({ ...inviteParams, extraHeaders });
+  }
+
+  /**
+   * Build Recording Metadata XML (RFC 7865)
+   */
+  buildRecordingMetadataXML(params) {
+    const {
+      sessionId,
+      participants = [],
+      reason = 'QualityAssurance',
+      startTime = new Date().toISOString()
+    } = params;
+
+    const participantXML = participants.map(p => `
+    <participant participant_id="${p.id || ''}">
+      <nameID aor="${p.uri}">${p.name || ''}</nameID>
+      ${p.role ? `<associate-time>${startTime}</associate-time>` : ''}
+    </participant>`).join('');
+
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<recording xmlns="urn:ietf:params:xml:ns:recording:1">
+  <datamode>complete</datamode>
+  <session session_id="${sessionId}">
+    <start-time>${startTime}</start-time>
+    <reason>${reason}</reason>
+    ${participantXML}
+  </session>
+</recording>`;
+
+    return xml.trim();
+  }
+
+  /**
    * Build a default SDP (Session Description Protocol) body
    */
   buildDefaultSDP(username) {
