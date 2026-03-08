@@ -1,27 +1,36 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
 import { Toaster } from './components/ui/toaster'
 import { AuthLayout } from './components/layouts/AuthLayout'
 import { DashboardLayout } from './components/layouts/DashboardLayout'
 import { ProtectedRoute } from './components/ProtectedRoute'
+import { Spinner } from './components/ui/spinner'
 
-// Auth Pages
-import { LoginPage } from './pages/auth/LoginPage'
-import { RegisterPage } from './pages/auth/RegisterPage'
-
-// Dashboard Pages
-import { DashboardPage } from './pages/DashboardPage'
-import { CredentialsPage } from './pages/CredentialsPage'
-import { TestRunnerPage } from './pages/TestRunnerPage'
-import { SIPTestBuilderPage } from './pages/SIPTestBuilderPage'
-import { FlowVisualizationDemoPage } from './pages/FlowVisualizationDemoPage'
-import { TestResultsPage } from './pages/TestResultsPage'
-import { TestResultDetailPage } from './pages/TestResultDetailPage'
-import { UsersPage } from './pages/UsersPage'
-import { OrganizationPage } from './pages/OrganizationPage'
-import { DocumentationPage } from './pages/docs/DocumentationPage'
+// Lazy load pages for code splitting
+const LoginPage = lazy(() => import('./pages/auth/LoginPage').then(m => ({ default: m.LoginPage })))
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage').then(m => ({ default: m.RegisterPage })))
+const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
+const CredentialsPage = lazy(() => import('./pages/CredentialsPage').then(m => ({ default: m.CredentialsPage })))
+const TestRunnerPage = lazy(() => import('./pages/TestRunnerPage').then(m => ({ default: m.TestRunnerPage })))
+const SIPTestBuilderPage = lazy(() => import('./pages/SIPTestBuilderPage').then(m => ({ default: m.SIPTestBuilderPage })))
+const FlowVisualizationDemoPage = lazy(() => import('./pages/FlowVisualizationDemoPage').then(m => ({ default: m.FlowVisualizationDemoPage })))
+const DocumentationPage = lazy(() => import('./pages/docs/DocumentationPage').then(m => ({ default: m.DocumentationPage })))
+const TestResultsPage = lazy(() => import('./pages/TestResultsPage').then(m => ({ default: m.TestResultsPage })))
+const TestResultDetailPage = lazy(() => import('./pages/TestResultDetailPage').then(m => ({ default: m.TestResultDetailPage })))
+const UsersPage = lazy(() => import('./pages/UsersPage').then(m => ({ default: m.UsersPage })))
+const OrganizationPage = lazy(() => import('./pages/OrganizationPage').then(m => ({ default: m.OrganizationPage })))
 
 import './App.css'
+
+// Loading fallback component
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center">
+      <Spinner className="h-8 w-8" />
+    </div>
+  )
+}
 
 function App() {
   return (
@@ -40,8 +49,8 @@ function App() {
 
           {/* Auth Routes */}
           <Route element={<AuthLayout />}>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/register" element={<RegisterPage />} />
+            <Route path="/login" element={<Suspense fallback={<PageLoader />}><LoginPage /></Suspense>} />
+            <Route path="/register" element={<Suspense fallback={<PageLoader />}><RegisterPage /></Suspense>} />
           </Route>
 
           {/* Protected Dashboard Routes */}
@@ -52,21 +61,23 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/credentials" element={<CredentialsPage />} />
-            <Route path="/test-runner" element={<TestRunnerPage />} />
-            <Route path="/sip-test-builder" element={<SIPTestBuilderPage />} />
-            <Route path="/flow-visualization" element={<FlowVisualizationDemoPage />} />
-            <Route path="/documentation" element={<DocumentationPage />} />
-            <Route path="/test-results" element={<TestResultsPage />} />
-            <Route path="/test-results/:id" element={<TestResultDetailPage />} />
+            <Route path="/dashboard" element={<Suspense fallback={<PageLoader />}><DashboardPage /></Suspense>} />
+            <Route path="/credentials" element={<Suspense fallback={<PageLoader />}><CredentialsPage /></Suspense>} />
+            <Route path="/test-runner" element={<Suspense fallback={<PageLoader />}><TestRunnerPage /></Suspense>} />
+            <Route path="/sip-test-builder" element={<Suspense fallback={<PageLoader />}><SIPTestBuilderPage /></Suspense>} />
+            <Route path="/flow-visualization" element={<Suspense fallback={<PageLoader />}><FlowVisualizationDemoPage /></Suspense>} />
+            <Route path="/documentation" element={<Suspense fallback={<PageLoader />}><DocumentationPage /></Suspense>} />
+            <Route path="/test-results" element={<Suspense fallback={<PageLoader />}><TestResultsPage /></Suspense>} />
+            <Route path="/test-results/:id" element={<Suspense fallback={<PageLoader />}><TestResultDetailPage /></Suspense>} />
             
             {/* Admin Routes */}
             <Route
               path="/users"
               element={
                 <ProtectedRoute requireRole={['admin', 'org-admin']}>
-                  <UsersPage />
+                  <Suspense fallback={<PageLoader />}>
+                    <UsersPage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
@@ -76,7 +87,9 @@ function App() {
               path="/organization"
               element={
                 <ProtectedRoute requireRole={['org-admin']}>
-                  <OrganizationPage />
+                  <Suspense fallback={<PageLoader />}>
+                    <OrganizationPage />
+                  </Suspense>
                 </ProtectedRoute>
               }
             />
