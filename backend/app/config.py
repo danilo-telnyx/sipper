@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     access_token_expire_minutes: int = 15
     refresh_token_expire_days: int = 7
     encryption_key: str
+    sip_engine_secret: str = ""  # Auto-generated if not set
     
     # API
     api_title: str = "SIPPER API"

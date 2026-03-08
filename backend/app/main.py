@@ -11,7 +11,7 @@ from slowapi.errors import RateLimitExceeded
 from app.config import settings
 from app.database import init_db
 from app.rate_limit import limiter
-from app.routers import auth, organizations, users, credentials, tests, telnyx
+from app.routers import auth, organizations, users, credentials, tests, telnyx, dashboard, adhoc_tests
 
 # Frontend directory
 FRONTEND_DIR = Path("/app/frontend/dist")
@@ -81,6 +81,8 @@ app.add_middleware(
 
 # Include routers with /api prefix
 app.include_router(auth.router, prefix="/api")
+app.include_router(dashboard.router, prefix="/api")
+app.include_router(adhoc_tests.router, prefix="/api")
 app.include_router(organizations.router, prefix="/api")
 app.include_router(users.router, prefix="/api")
 app.include_router(credentials.router, prefix="/api")

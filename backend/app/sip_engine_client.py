@@ -1,7 +1,9 @@
 """Client for SIP Engine HTTP API."""
 import httpx
+import secrets
 from typing import Optional, Dict, Any
 from app.schemas import TestType
+from app.config import settings
 
 
 class SIPEngineClient:
@@ -10,6 +12,9 @@ class SIPEngineClient:
     def __init__(self, base_url: str = "http://127.0.0.1:5001"):
         self.base_url = base_url
         self.timeout = 30.0  # SIP tests can take time
+        
+        # Generate secret if not configured
+        self.secret = settings.sip_engine_secret or secrets.token_urlsafe(32)
     
     async def health_check(self) -> bool:
         """Check if SIP engine is running."""
@@ -53,7 +58,8 @@ class SIPEngineClient:
         async with httpx.AsyncClient(timeout=self.timeout) as client:
             response = await client.post(
                 f"{self.base_url}/test/run",
-                json=payload
+                json=payload,
+                headers={"X-SIP-Engine-Secret": self.secret}
             )
             
             if response.status_code != 200:

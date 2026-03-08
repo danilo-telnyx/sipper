@@ -25,3 +25,9 @@ def get_register_limit():
     if settings.app_env == "development":
         return "100/hour"  # Very permissive for dev
     return "3/10minutes"  # Strict for production
+
+def get_adhoc_test_limit():
+    """Get ad-hoc test rate limit based on environment."""
+    if settings.app_env == "development":
+        return "100/hour"  # Permissive for dev
+    return "10/hour"  # Prevent brute-force SIP attacks in production

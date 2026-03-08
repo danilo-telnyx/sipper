@@ -1,7 +1,7 @@
 """Test execution endpoints."""
 from uuid import UUID
 from datetime import datetime, timezone
-from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -9,6 +9,7 @@ from app.database import get_db
 from app.models import User, TestRun, TestResult, SIPCredential
 from app.schemas import TestRunCreate, TestRunResponse, TestResultResponse
 from app.auth.dependencies import get_current_active_user
+from app.rate_limit import limiter, get_adhoc_test_limit
 
 router = APIRouter(prefix="/tests", tags=["Tests"])
 
@@ -60,10 +61,12 @@ async def execute_sip_test(test_run_id: UUID):
                 }
             elif test_run.metadata and "ad_hoc_credentials" in test_run.metadata:
                 # Use ad-hoc credentials from metadata
+                # SECURITY: Decrypt password from metadata
+                from app.utils import decrypt_credential
                 ad_hoc = test_run.metadata["ad_hoc_credentials"]
                 credentials = {
                     "username": ad_hoc.get("username"),
-                    "password": ad_hoc.get("password"),
+                    "password": decrypt_credential(ad_hoc.get("password_encrypted")),
                     "host": ad_hoc.get("domain"),
                     "domain": ad_hoc.get("domain"),
                     "port": ad_hoc.get("port", 5060)
@@ -173,6 +176,7 @@ async def execute_sip_test(test_run_id: UUID):
 @router.post("/run", response_model=TestRunResponse, status_code=status.HTTP_202_ACCEPTED)
 async def run_test(
     test_data: TestRunCreate,
+    request: Request,
     background_tasks: BackgroundTasks,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
@@ -206,11 +210,13 @@ async def run_test(
     metadata = dict(test_data.metadata) if test_data.metadata else {}
     
     # Store ad-hoc credentials in metadata (if provided)
+    # SECURITY: Encrypt password before storing
     if test_data.ad_hoc_credentials:
+        from app.utils import encrypt_credential
         metadata["ad_hoc_credentials"] = {
             "domain": test_data.ad_hoc_credentials.domain,
             "username": test_data.ad_hoc_credentials.username,
-            "password": test_data.ad_hoc_credentials.password,
+            "password_encrypted": encrypt_credential(test_data.ad_hoc_credentials.password),
             "port": test_data.ad_hoc_credentials.port,
             "transport": test_data.ad_hoc_credentials.transport,
         }

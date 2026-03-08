@@ -10,6 +10,35 @@ const app = express();
 app.use(express.json());
 
 const PORT = process.env.SIP_ENGINE_PORT || 5001;
+const API_SECRET = process.env.SIP_ENGINE_SECRET || '';
+
+// Authentication middleware (skipped for health check)
+function authenticateRequest(req, res, next) {
+  // Skip auth for health check
+  if (req.path === '/health') {
+    return next();
+  }
+  
+  // In development without secret, allow all requests
+  if (!API_SECRET) {
+    console.warn('⚠️  SIP_ENGINE_SECRET not set - authentication disabled (development mode)');
+    return next();
+  }
+  
+  const providedSecret = req.headers['x-sip-engine-secret'];
+  
+  if (!providedSecret || providedSecret !== API_SECRET) {
+    console.error('❌ Unauthorized SIP engine request - invalid secret');
+    return res.status(401).json({ 
+      error: 'Unauthorized',
+      message: 'Invalid or missing X-SIP-Engine-Secret header'
+    });
+  }
+  
+  next();
+}
+
+app.use(authenticateRequest);
 
 // Health check
 app.get('/health', (req, res) => {
