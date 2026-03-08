@@ -49,3 +49,6 @@ secrets/
 *.crt
 .env.backup-*
 Screenshot*.png
+
+# Reports and documentation artifacts (except README.md, CHANGELOG.md)
+ScanNReports/
