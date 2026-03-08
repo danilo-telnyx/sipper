@@ -63,7 +63,7 @@ async def fetch_telnyx_credentials(request: TelnyxFetchRequest):
                     detail=f"Telnyx API error: {response.status_code}"
                 )
             
-            data = await response.json()
+            data = response.json()
             connection = data.get("data", {})
             
             # Extract SIP credentials
