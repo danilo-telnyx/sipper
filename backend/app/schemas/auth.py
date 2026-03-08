@@ -29,6 +29,11 @@ class UserData(BaseModel):
     created_at: str
 
 
+class RefreshRequest(BaseModel):
+    """Refresh token request schema."""
+    refreshToken: str
+
+
 class TokenResponse(BaseModel):
     """Token response schema."""
     access_token: str

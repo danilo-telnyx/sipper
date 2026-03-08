@@ -3,6 +3,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from uuid import UUID
 
 from app.database import get_db
@@ -33,8 +34,12 @@ async def get_current_user(
             detail="Invalid token payload",
         )
     
-    # Fetch user from database
-    result = await db.execute(select(User).where(User.id == UUID(user_id)))
+    # Fetch user from database with roles eagerly loaded
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.user_roles).selectinload(lambda ur: ur.role))
+        .where(User.id == UUID(user_id))
+    )
     user = result.scalar_one_or_none()
     
     if user is None:

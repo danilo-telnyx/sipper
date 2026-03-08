@@ -5,6 +5,32 @@ All notable changes to SIPPER will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2026-03-09
+
+### Fixed
+- **Authentication**: Fixed token refresh endpoint returning 422 error
+  - Created `RefreshRequest` schema for proper JSON body parsing
+  - Updated `/auth/refresh` endpoint to accept `{ refreshToken: "..." }` format
+  - Added user data to refresh response (includes current role)
+- **Test Runner**: Fixed test execution API 422 error
+  - Added payload transformation in `frontend/src/services/api.ts`
+  - Maps frontend test types (`basic-registration`) to backend SIP methods (`REGISTER`)
+  - Transforms camelCase to snake_case for backend compatibility
+  - Adds required fields (`authenticated`, `metadata`)
+- **User Management**: Fixed user creation form
+  - Added password field for new user registration
+  - Fixed `organizationId` mapping in form submission
+  - Password now properly validated (min 8 characters)
+- **Role-Based Access Control**: Fixed role loading and permissions
+  - Updated auth dependency to eagerly load user roles
+  - Added `role` field to `UserResponse` schema
+  - Fixed edit/delete buttons visibility on Credentials page (requires admin role)
+
+### Changed
+- Database cleanup: Removed 5 test accounts, kept only production users
+- Reassigned orphaned credentials to admin user
+- Set password for admin account (`danilo@telnyx.com`)
+
 ## [0.7.0] - 2026-03-08
 
 ### Added - Sprint 5: Integration & Polish (Production Ready)

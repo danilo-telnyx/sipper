@@ -163,7 +163,7 @@ The application will **refuse to start** if weak/default secrets are detected.
   - Security best practices
 - ✅ **Version Display** — FE/BE versions in sidebar footer
 
-### 🆕 Production Ready (v0.7.0)
+### 🆕 Production Ready (v0.7.1)
 - ✅ **E2E Testing** — Playwright test suite
   - 33 comprehensive tests across 4 suites
   - Cross-browser testing (Chrome, Firefox, Safari, Mobile)

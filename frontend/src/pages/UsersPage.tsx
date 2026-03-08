@@ -76,11 +76,17 @@ export function UsersPage() {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const formData = new FormData(e.currentTarget)
-    const data: Partial<User> = {
-      name: formData.get('name') as string,
+    const data: any = {
+      full_name: formData.get('name') as string,
       email: formData.get('email') as string,
-      role: formData.get('role') as UserRole,
     }
+    
+    // Add password for new users
+    if (!editingUser) {
+      data.password = formData.get('password') as string
+      data.organization_id = currentUser?.organizationId
+    }
+    
     createMutation.mutate(data)
   }
 
@@ -251,6 +257,23 @@ export function UsersPage() {
                   placeholder="john@example.com"
                 />
               </div>
+
+              {!editingUser && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    required
+                    placeholder="Minimum 8 characters"
+                    minLength={8}
+                  />
+                  <p className="text-xs text-muted-foreground">
+                    User will use this password to log in
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="role">Role</Label>

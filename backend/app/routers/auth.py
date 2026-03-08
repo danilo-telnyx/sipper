@@ -8,7 +8,7 @@ from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
 from app.models import User, Organization
-from app.schemas import LoginRequest, RegisterRequest, TokenResponse
+from app.schemas import LoginRequest, RegisterRequest, RefreshRequest, TokenResponse
 from app.auth import hash_password, verify_password, create_access_token, create_refresh_token
 from app.rate_limit import limiter, get_login_limit, get_register_limit
 
@@ -181,23 +181,59 @@ async def logout():
 
 
 @router.post("/refresh", response_model=TokenResponse)
-async def refresh_token(refresh_token: str):
+async def refresh_token(refresh_data: RefreshRequest, db: AsyncSession = Depends(get_db)):
     """Refresh access token using refresh token."""
     from app.auth.jwt import verify_token
     
-    payload = verify_token(refresh_token, "refresh")
+    payload = verify_token(refresh_data.refreshToken, "refresh")
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token"
         )
     
+    # Fetch user to get current role
+    from app.models import User, UserRole
+    user_id = payload.get("sub")
+    
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User not found"
+        )
+    
+    # Fetch user's role
+    role_result = await db.execute(
+        select(UserRole).where(UserRole.user_id == user.id)
+    )
+    user_role = role_result.scalar_one_or_none()
+    
+    role_name = "user"
+    if user_role:
+        await db.refresh(user_role, ["role"])
+        if user_role.role:
+            role_name = user_role.role.name
+    
     # Generate new tokens
     token_data = {"sub": payload["sub"], "org_id": payload["org_id"]}
     new_access_token = create_access_token(token_data)
     new_refresh_token = create_refresh_token(token_data)
     
+    # Return tokens with user data
+    from app.schemas import UserData
     return TokenResponse(
         access_token=new_access_token,
-        refresh_token=new_refresh_token
+        refresh_token=new_refresh_token,
+        user=UserData(
+            id=str(user.id),
+            email=user.email,
+            full_name=user.full_name,
+            role=role_name,
+            organization_id=str(user.organization_id),
+            is_active=user.is_active,
+            created_at=user.created_at.isoformat() if user.created_at else ""
+        )
     )

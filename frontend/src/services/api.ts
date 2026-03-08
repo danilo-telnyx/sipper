@@ -309,9 +309,44 @@ export const testsApi = {
   },
 
   create: async (config: TestConfiguration) => {
+    // Map frontend test types to backend SIP methods
+    const testTypeMap: Record<string, string> = {
+      'basic-registration': 'REGISTER',
+      'invite-call': 'INVITE',
+      'options-ping': 'OPTIONS',
+      'refer-transfer': 'REFER',
+      'bye-disconnect': 'BYE',
+      'cancel-call': 'CANCEL',
+      'recording-invite': 'RECORDING_INVITE',
+    }
+    
+    // Transform frontend camelCase to backend snake_case
+    const backendPayload = {
+      test_type: testTypeMap[config.testType] || 'REGISTER',
+      credential_id: config.credentialId || null,
+      ad_hoc_credentials: config.adHocCredentials ? {
+        domain: config.adHocCredentials.domain,
+        username: config.adHocCredentials.username,
+        password: config.adHocCredentials.password,
+        port: config.adHocCredentials.port || 5060,
+        transport: config.adHocCredentials.transport || 'UDP',
+      } : null,
+      authenticated: !!(config.credentialId || config.adHocCredentials),
+      sdp_body: null,
+      expires: 3600,
+      metadata: {
+        endpoint: config.endpoint,
+        duration: config.duration,
+        callCount: config.callCount,
+        concurrentCalls: config.concurrentCalls,
+        codec: config.codec,
+        customScenario: config.customScenario,
+      }
+    }
+    
     const response = await axiosInstance.post<ApiResponse<TestResult>>(
       '/tests/run',
-      config
+      backendPayload
     )
     return response.data
   },
