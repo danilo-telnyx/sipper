@@ -295,7 +295,7 @@ export const testsApi = {
     credentialId?: string
   }) => {
     const response = await axiosInstance.get<PaginatedResponse<TestResult>>(
-      '/tests',
+      '/tests/runs',
       { params }
     )
     return response.data
@@ -303,14 +303,14 @@ export const testsApi = {
 
   get: async (id: string) => {
     const response = await axiosInstance.get<ApiResponse<TestResult>>(
-      `/tests/${id}`
+      `/tests/runs/${id}`
     )
     return response.data
   },
 
   create: async (config: TestConfiguration) => {
     const response = await axiosInstance.post<ApiResponse<TestResult>>(
-      '/tests',
+      '/tests/run',
       config
     )
     return response.data
@@ -318,7 +318,7 @@ export const testsApi = {
 
   cancel: async (id: string) => {
     const response = await axiosInstance.post<ApiResponse<void>>(
-      `/tests/${id}/cancel`
+      `/tests/runs/${id}/cancel`
     )
     return response.data
   },
@@ -336,7 +336,7 @@ export const testsApi = {
 
   getProgress: async (id: string) => {
     const response = await axiosInstance.get<ApiResponse<any>>(
-      `/tests/${id}/progress`
+      `/tests/runs/${id}/progress`
     )
     return response.data
   },
