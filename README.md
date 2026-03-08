@@ -133,6 +133,19 @@ The application will **refuse to start** if weak/default secrets are detected.
 - ✅ **SDP Editor** — Session Description Protocol editing with templates
 - ✅ **Parameter Validation** — Comprehensive RFC 3261 compliance checks
 
+### 🆕 Help System (v0.5.0)
+- ✅ **Contextual Help Panel** — Context-aware help with keyboard shortcuts
+  - Toggle with `?` key or click help icon
+  - Slide-in panel with tabbed interface
+  - Route-based content detection
+- ✅ **Comprehensive Documentation** — In-app guides for all features
+  - Step-by-step instructions
+  - Copy-paste code examples
+  - RFC references with IETF links
+  - Troubleshooting tips
+- ✅ **7 Context Pages** — Dashboard, Credentials, Test Runners, Results, Admin
+- ✅ **Code Sample Library** — One-click copy with syntax highlighting
+
 ## 🌟 Telnyx Auto-Import
 
 Sipper can automatically import SIP credentials directly from your Telnyx account:

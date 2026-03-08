@@ -5,6 +5,75 @@ All notable changes to SIPPER will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0] - 2026-03-08
+
+### Added - Sprint 3: Help System
+- **Contextual Help Panel**: Collapsible right-side panel (300-450px wide)
+  - Context-aware content based on current route
+  - Toggle button in navigation header (HelpCircle icon)
+  - Keyboard shortcuts: `?` to toggle, `ESC` to close
+  - Smooth slide-in/out animations
+  
+- **Tabbed Help Interface**:
+  - **Guide**: Step-by-step instructions for each page
+  - **Examples**: Copy-paste ready code samples with syntax highlighting
+  - **RFCs**: Relevant RFC references with IETF links
+  - **Troubleshooting**: Common problems and solutions
+  
+- **Help Content Database** (`helpContent.ts`):
+  - Dashboard help
+  - Credentials Manager help (with Telnyx Auto-Import guide)
+  - Classic Test Runner help
+  - Enhanced SIP Test Builder help (comprehensive)
+  - Test Results help
+  - User Management help
+  - Organization Settings help
+  
+- **Code Sample Features**:
+  - Syntax highlighting for SIP, JavaScript, JSON, Shell
+  - One-click copy to clipboard
+  - Visual feedback on copy (checkmark icon)
+  
+- **RFC Reference Links**:
+  - Direct links to IETF datatracker
+  - Section references
+  - Descriptions for each RFC
+  
+- **New Components** (`components/help-system/`):
+  - `ContextualHelpPanel.tsx`: Main help panel with backdrop
+  - `HelpTabs.tsx`: Tabbed interface with 4 sections
+  - `helpContent.ts`: Content database (12KB, 7 page contexts)
+  - `types.ts`: TypeScript types for help content
+  
+- **Quick Links Section**:
+  - RFC 3261 (SIP Protocol)
+  - RFC 3515 (REFER Method)
+  - RFC 7865 (Session Recording)
+  - GitHub Repository
+  
+- **Keyboard Shortcuts Display**:
+  - Shows available shortcuts in help panel
+  - Visual kbd elements for key combinations
+
+### Changed
+- Updated `DashboardLayout.tsx` with help panel integration
+- Added HelpCircle icon to Lucide imports
+- Added keyboard event listeners for global shortcuts
+
+### Testing
+- ✅ Frontend build successful (no TypeScript errors)
+- ✅ Help panel opens/closes smoothly
+- ✅ Context detection working for all routes
+- ✅ Code copying functional
+- ✅ Keyboard shortcuts responsive
+
+### Documentation
+- Comprehensive help content for all major pages
+- SIP examples with full message formatting
+- RFC references with accurate section numbers
+
+---
+
 ## [0.4.0] - 2026-03-08
 
 ### Added - Sprint 2: Frontend SIP Test Builder UI

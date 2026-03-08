@@ -21,10 +21,12 @@ import {
   User,
   Building2,
   X,
+  HelpCircle,
 } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { wsService } from '../../services/websocket'
 import { useToast } from '../../hooks/use-toast'
+import { ContextualHelpPanel } from '../help-system'
 
 const APP_VERSION = import.meta.env.VITE_APP_VERSION || '0.1.0'
 
@@ -35,6 +37,7 @@ export function DashboardLayout() {
   const { toast } = useToast()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const [helpPanelOpen, setHelpPanelOpen] = useState(false)
 
   useEffect(() => {
     // Connect WebSocket on mount
@@ -48,6 +51,25 @@ export function DashboardLayout() {
   useEffect(() => {
     setMobileMenuOpen(false)
   }, [location.pathname])
+
+  // Keyboard shortcuts for help panel
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // ? to toggle help (Shift + /)
+      if (e.key === '?' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault()
+        setHelpPanelOpen((prev) => !prev)
+      }
+      // ESC to close help
+      if (e.key === 'Escape' && helpPanelOpen) {
+        e.preventDefault()
+        setHelpPanelOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [helpPanelOpen])
 
   const handleLogout = async () => {
     setIsLoggingOut(true)
@@ -110,6 +132,17 @@ export function DashboardLayout() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* Help Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setHelpPanelOpen(!helpPanelOpen)}
+              aria-label="Toggle help panel"
+              title="Help & Documentation (Press ?)"
+            >
+              <HelpCircle className="h-5 w-5" />
+            </Button>
+
             {/* User Menu Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -254,6 +287,12 @@ export function DashboardLayout() {
           SIPPER v{APP_VERSION} - SIP Testing Platform
         </div>
       </footer>
+
+      {/* Help Panel */}
+      <ContextualHelpPanel
+        isOpen={helpPanelOpen}
+        onClose={() => setHelpPanelOpen(false)}
+      />
     </div>
   )
 }
