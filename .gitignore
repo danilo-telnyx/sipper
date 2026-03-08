@@ -47,3 +47,5 @@ secrets/
 *.pem
 *.key
 *.crt
+.env.backup-*
+Screenshot*.png
