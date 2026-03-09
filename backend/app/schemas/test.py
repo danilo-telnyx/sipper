@@ -56,8 +56,8 @@ class TestRunBase(BaseModel):
     sdp_body: str | None = Field(None, description="Custom SDP body for INVITE")
     expires: int | None = Field(3600, description="Expiration time for REGISTER (seconds)")
     
-    # Generic metadata
-    metadata: dict = {}
+    # Generic test metadata (renamed from 'metadata' to avoid SQLAlchemy conflict)
+    test_metadata: dict = {}
 
 
 class TestRunCreate(TestRunBase):
@@ -75,28 +75,9 @@ class TestRunResponse(BaseModel):
     started_at: datetime
     completed_at: datetime | None
     created_by: UUID | None
-    metadata: dict = {}
+    test_metadata: dict = {}
     
     model_config = ConfigDict(from_attributes=True)
-    
-    @classmethod
-    def model_validate(cls, obj, **kwargs):
-        """Custom validator to handle test_metadata -> metadata mapping from SQLAlchemy."""
-        # Handle SQLAlchemy model
-        if hasattr(obj, 'test_metadata') and hasattr(obj, '__tablename__'):
-            # Extract data from SQLAlchemy model, mapping test_metadata to metadata
-            return cls(
-                id=obj.id,
-                organization_id=obj.organization_id,
-                test_type=obj.test_type,
-                credential_id=obj.credential_id,
-                status=obj.status,
-                started_at=obj.started_at,
-                completed_at=obj.completed_at,
-                created_by=obj.created_by,
-                metadata=obj.test_metadata if isinstance(obj.test_metadata, dict) else {},
-            )
-        return super().model_validate(obj, **kwargs)
 
 
 class TestResultResponse(BaseModel):

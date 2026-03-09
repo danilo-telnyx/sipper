@@ -68,11 +68,11 @@ async def execute_sip_test(test_run_id: UUID):
                     "domain": credential.sip_domain,
                     "port": credential.port or 5060
                 }
-            elif test_run.metadata and "ad_hoc_credentials" in test_run.metadata:
+            elif test_run.test_metadata and "ad_hoc_credentials" in test_run.test_metadata:
                 # Use ad-hoc credentials from metadata
                 # SECURITY: Decrypt password from metadata
                 from app.utils import decrypt_credential
-                ad_hoc = test_run.metadata["ad_hoc_credentials"]
+                ad_hoc = test_run.test_metadata["ad_hoc_credentials"]
                 credentials = {
                     "username": ad_hoc.get("username"),
                     "password": decrypt_credential(ad_hoc.get("password_encrypted")),
@@ -82,7 +82,7 @@ async def execute_sip_test(test_run_id: UUID):
                 }
             
             # Get test config from metadata
-            config = test_run.metadata or {}
+            config = test_run.test_metadata or {}
             
             # Map test type to SIP engine test type
             test_type_map = {
@@ -255,7 +255,7 @@ async def run_test(
         )
     
     # Prepare metadata
-    metadata = dict(test_data.metadata) if test_data.metadata else {}
+    metadata = dict(test_data.test_metadata) if test_data.test_metadata else {}
     
     # Store ad-hoc credentials in metadata (if provided)
     # SECURITY: Encrypt password before storing
