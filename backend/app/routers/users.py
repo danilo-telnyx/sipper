@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db
 from app.models import User, Role, UserRole
@@ -21,7 +22,9 @@ async def list_users(
 ):
     """List users in current user's organization."""
     result = await db.execute(
-        select(User).where(User.organization_id == current_user.organization_id)
+        select(User)
+        .options(selectinload(User.user_roles).selectinload(UserRole.role))
+        .where(User.organization_id == current_user.organization_id)
     )
     users = result.scalars().all()
     return users
@@ -34,7 +37,11 @@ async def get_user(
     current_user: User = Depends(get_current_active_user)
 ):
     """Get user details."""
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.user_roles).selectinload(UserRole.role))
+        .where(User.id == user_id)
+    )
     user = result.scalar_one_or_none()
     
     if not user:
@@ -91,7 +98,11 @@ async def update_user(
     current_user: User = Depends(get_current_active_user)
 ):
     """Update user."""
-    result = await db.execute(select(User).where(User.id == user_id))
+    result = await db.execute(
+        select(User)
+        .options(selectinload(User.user_roles).selectinload(UserRole.role))
+        .where(User.id == user_id)
+    )
     user = result.scalar_one_or_none()
     
     if not user:
