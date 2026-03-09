@@ -331,10 +331,77 @@ export const testsApi = {
   },
 
   get: async (id: string) => {
-    const response = await axiosInstance.get<ApiResponse<TestResult>>(
-      `/tests/runs/${id}`
-    )
-    return response.data
+    console.log('[testsApi] get called for test:', id)
+    
+    // Fetch test run
+    const testResponse = await axiosInstance.get<any>(`/tests/runs/${id}`)
+    const test = testResponse.data
+    
+    // Fetch test results (detailed SIP messages)
+    const resultsResponse = await axiosInstance.get<any>(`/tests/results/${id}`)
+    const results = resultsResponse.data || []
+    
+    console.log('[testsApi] test data:', test)
+    console.log('[testsApi] test results:', results)
+    
+    // Transform test run data
+    const startedAt = new Date(test.started_at)
+    const completedAt = test.completed_at ? new Date(test.completed_at) : null
+    const duration = completedAt ? completedAt.getTime() - startedAt.getTime() : 0
+    
+    // Transform test results into SIP messages
+    const sipMessages = results
+      .filter((r: any) => r.step_name.startsWith('out_') || r.step_name.startsWith('in_'))
+      .map((r: any) => {
+        try {
+          const details = typeof r.details === 'string' ? JSON.parse(r.details) : r.details
+          const message = details.message || {}
+          
+          if (r.step_name.startsWith('out_')) {
+            return {
+              direction: 'sent',
+              timestamp: r.timestamp,
+              method: r.step_name.replace('out_', ''),
+              rawMessage: message.message || '',
+              headers: {},
+            }
+          } else {
+            return {
+              direction: 'received',
+              timestamp: r.timestamp,
+              statusCode: message.statusCode || 0,
+              statusText: message.reasonPhrase || message.message?.reasonPhrase || '',
+              rawMessage: message.message || '',
+              headers: message.message?.headers || message.headers || {},
+            }
+          }
+        } catch (e) {
+          console.error('[testsApi] Failed to parse result:', r, e)
+          return null
+        }
+      })
+      .filter((m: any) => m !== null)
+    
+    console.log('[testsApi] transformed SIP messages:', sipMessages)
+    
+    return {
+      success: true,
+      data: {
+        id: test.id,
+        testType: test.test_type,
+        credentialName: 'SIP Credential',
+        credentialId: test.credential_id,
+        status: test.status,
+        startedAt: test.started_at,
+        completedAt: test.completed_at,
+        duration: Math.round(duration / 1000),
+        score: test.status === 'completed' ? 100 : 0,
+        organizationId: test.organization_id,
+        metadata: test.test_metadata || {},
+        sipMessages, // Add SIP messages
+        testResults: results, // Add raw test results
+      }
+    }
   },
 
   create: async (config: TestConfiguration) => {
