@@ -5,8 +5,16 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 
 
-# Supported SIP test types
+# Supported SIP test types (user-friendly names)
 SIPTestType = Literal[
+    "registration",  # REGISTER method
+    "call",          # INVITE method
+    "message",       # OPTIONS method (placeholder)
+    "refer",         # REFER method
+    "bye",           # BYE method
+    "cancel",        # CANCEL method
+    "recording",     # RECORDING_INVITE
+    # Also accept raw SIP method names for backward compatibility
     "INVITE",
     "REGISTER",
     "OPTIONS",

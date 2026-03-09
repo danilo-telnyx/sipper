@@ -24,9 +24,12 @@ async def execute_sip_test(test_run_id: UUID):
     from app.sip_engine_client import get_sip_engine_client
     from app.websocket import send_test_progress, send_test_log, send_test_completed, send_test_failed
     
+    print(f"[TEST {test_run_id}] Background task started")
+    
     # Create new session for background task
     async with AsyncSessionLocal() as db:
         try:
+            print(f"[TEST {test_run_id}] Fetching test run from database")
             # Fetch test run
             result = await db.execute(
                 select(TestRun).where(TestRun.id == test_run_id)
@@ -34,7 +37,10 @@ async def execute_sip_test(test_run_id: UUID):
             test_run = result.scalar_one_or_none()
             
             if not test_run:
+                print(f"[TEST {test_run_id}] ERROR: Test run not found")
                 return
+            
+            print(f"[TEST {test_run_id}] Test run found: type={test_run.test_type}, status={test_run.status}")
             
             # Fetch credential if credential_id is set
             credential = None
@@ -47,6 +53,7 @@ async def execute_sip_test(test_run_id: UUID):
             # Update status to running
             test_run.status = "running"
             await db.commit()
+            print(f"[TEST {test_run_id}] Status updated to 'running'")
             
             # Send WebSocket notification: test started
             await send_test_progress(
@@ -54,8 +61,10 @@ async def execute_sip_test(test_run_id: UUID):
                 str(test_run.organization_id),
                 {"status": "running", "progress": 0, "currentStep": "Initializing test"}
             )
+            print(f"[TEST {test_run_id}] WebSocket progress sent: Initializing")
             
             # Prepare SIP engine client
+            print(f"[TEST {test_run_id}] Connecting to SIP engine")
             sip_client = get_sip_engine_client()
             
             # Build credentials payload
@@ -101,11 +110,13 @@ async def execute_sip_test(test_run_id: UUID):
             )
             
             # Execute test via SIP engine
+            print(f"[TEST {test_run_id}] Executing SIP test: type={sip_test_type}")
             result = await sip_client.run_test(
                 test_type=sip_test_type,
                 credentials=credentials,
                 config=config
             )
+            print(f"[TEST {test_run_id}] SIP test completed: success={result.get('success')}, duration={result.get('duration')}ms")
             
             # Send progress: Processing results
             await send_test_progress(
@@ -113,6 +124,7 @@ async def execute_sip_test(test_run_id: UUID):
                 str(test_run.organization_id),
                 {"status": "running", "progress": 75, "currentStep": "Processing SIP messages"}
             )
+            print(f"[TEST {test_run_id}] WebSocket progress sent: Processing results")
             
             # Store test messages as results
             for msg in result.get("messages", []):
@@ -169,9 +181,11 @@ async def execute_sip_test(test_run_id: UUID):
             test_run.completed_at = datetime.now(timezone.utc)
             
             await db.commit()
+            print(f"[TEST {test_run_id}] Final status: {test_run.status}")
             
             # Send WebSocket notification: test completed
             if result.get("success"):
+                print(f"[TEST {test_run_id}] Sending WebSocket: test completed")
                 await send_test_completed(
                     str(test_run_id),
                     str(test_run.organization_id),
@@ -182,15 +196,20 @@ async def execute_sip_test(test_run_id: UUID):
                     }
                 )
             else:
+                print(f"[TEST {test_run_id}] Sending WebSocket: test failed")
                 await send_test_failed(
                     str(test_run_id),
                     str(test_run.organization_id),
                     f"Test failed: {', '.join(result.get('errors', []))}"
                 )
             
+            print(f"[TEST {test_run_id}] Background task completed successfully")
+            
         except Exception as e:
             # Log error and mark test as failed
-            print(f"Test execution error: {str(e)}")
+            import traceback
+            print(f"[TEST {test_run_id}] EXCEPTION: {str(e)}")
+            print(f"[TEST {test_run_id}] Traceback:\n{traceback.format_exc()}")
             await db.rollback()
             
             # Try to mark as failed
@@ -310,8 +329,15 @@ async def get_test_run(
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_active_user)
 ):
-    """Get test run details."""
-    result = await db.execute(select(TestRun).where(TestRun.id == test_run_id))
+    """
+    Get test run status by ID.
+    Allows frontend to poll for test completion.
+    """
+    result = await db.execute(
+        select(TestRun)
+        .where(TestRun.id == test_run_id)
+        .where(TestRun.organization_id == current_user.organization_id)
+    )
     test_run = result.scalar_one_or_none()
     
     if not test_run:
@@ -325,29 +351,6 @@ async def get_test_run(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
         )
-    
-    return test_run
-
-
-@router.get("/runs/{test_run_id}", response_model=TestRunResponse)
-async def get_test_run(
-    test_run_id: UUID,
-    db: AsyncSession = Depends(get_db),
-    current_user: User = Depends(get_current_active_user)
-):
-    """
-    Get test run status by ID.
-    Allows frontend to poll for test completion.
-    """
-    result = await db.execute(
-        select(TestRun)
-        .where(TestRun.id == test_run_id)
-        .where(TestRun.organization_id == current_user.organization_id)
-    )
-    test_run = result.scalar_one_or_none()
-    
-    if not test_run:
-        raise HTTPException(status_code=404, detail="Test run not found")
     
     return test_run
 
