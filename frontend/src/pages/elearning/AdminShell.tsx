@@ -19,13 +19,16 @@ import { useRole } from '@/contexts/RoleContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import ContentEditorModule from './admin/ContentEditorModule';
+import QuizManagerModule from './admin/QuizManagerModule';
+import BranchingFlowBuilder from './admin/BranchingFlowBuilder';
 
-type AdminTab = 'courses' | 'questions' | 'learners' | 'analytics' | 'branching' | 'certificates' | 'settings';
+type AdminTab = 'content' | 'quizzes' | 'branching' | 'learners' | 'analytics' | 'certificates' | 'settings';
 
 export default function AdminShell() {
   const navigate = useNavigate();
   const { logout } = useRole();
-  const [activeTab, setActiveTab] = useState<AdminTab>('courses');
+  const [activeTab, setActiveTab] = useState<AdminTab>('content');
 
   const handleLogout = () => {
     logout();
@@ -66,18 +69,25 @@ export default function AdminShell() {
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AdminTab)}>
           <TabsList className="grid grid-cols-7 w-full mb-8 bg-white/50 backdrop-blur">
             <TabsTrigger
-              value="courses"
+              value="content"
               className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
             >
               <BookOpen className="h-4 w-4 mr-2" />
-              Courses
+              Content
             </TabsTrigger>
             <TabsTrigger
-              value="questions"
+              value="quizzes"
               className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
             >
               <FileText className="h-4 w-4 mr-2" />
-              Questions
+              Quizzes
+            </TabsTrigger>
+            <TabsTrigger
+              value="branching"
+              className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
+            >
+              <GitBranch className="h-4 w-4 mr-2" />
+              Branching
             </TabsTrigger>
             <TabsTrigger
               value="learners"
@@ -92,13 +102,6 @@ export default function AdminShell() {
             >
               <BarChart3 className="h-4 w-4 mr-2" />
               Analytics
-            </TabsTrigger>
-            <TabsTrigger
-              value="branching"
-              className="data-[state=active]:bg-purple-600 data-[state=active]:text-white"
-            >
-              <GitBranch className="h-4 w-4 mr-2" />
-              Branching
             </TabsTrigger>
             <TabsTrigger
               value="certificates"
@@ -116,58 +119,19 @@ export default function AdminShell() {
             </TabsTrigger>
           </TabsList>
 
-          {/* Courses Tab */}
-          <TabsContent value="courses">
-            <Card className="p-6 border-purple-200">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Course Management</h2>
-                  <p className="text-gray-600 mt-1">Create and manage course sections</p>
-                </div>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  Add Section
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                  <p className="text-sm text-gray-600">
-                    📚 <strong>15 Sections</strong> organized across <strong>3 Levels</strong>
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Course content management will be implemented by Sub-Agent 2
-                  </p>
-                </div>
-              </div>
-            </Card>
+          {/* Content Editor Tab */}
+          <TabsContent value="content" className="mt-0">
+            <ContentEditorModule />
           </TabsContent>
 
-          {/* Questions Tab */}
-          <TabsContent value="questions">
-            <Card className="p-6 border-purple-200">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Question Bank</h2>
-                  <p className="text-gray-600 mt-1">Manage assessment questions</p>
-                </div>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Add Question
-                </Button>
-              </div>
+          {/* Quiz Manager Tab */}
+          <TabsContent value="quizzes" className="mt-0">
+            <QuizManagerModule />
+          </TabsContent>
 
-              <div className="space-y-4">
-                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                  <p className="text-sm text-gray-600">
-                    📝 Question bank with multiple choice, true/false, and open-ended questions
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Question management will be implemented by Sub-Agent 2
-                  </p>
-                </div>
-              </div>
-            </Card>
+          {/* Branching Flow Builder Tab */}
+          <TabsContent value="branching" className="mt-0">
+            <BranchingFlowBuilder />
           </TabsContent>
 
           {/* Learners Tab */}
@@ -186,7 +150,7 @@ export default function AdminShell() {
                     👥 View all learner sessions, progress tracking, and completion status
                   </p>
                   <p className="text-xs text-gray-500 mt-2">
-                    Learner tracking will be implemented by Sub-Agent 3
+                    Learner tracking dashboard will be implemented by Agent 4
                   </p>
                 </div>
               </div>
@@ -220,35 +184,8 @@ export default function AdminShell() {
 
               <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
                 <p className="text-xs text-gray-500">
-                  Advanced analytics and reporting will be implemented by Sub-Agent 3
+                  Advanced analytics and reporting will be implemented by Agent 4
                 </p>
-              </div>
-            </Card>
-          </TabsContent>
-
-          {/* Branching Tab */}
-          <TabsContent value="branching">
-            <Card className="p-6 border-purple-200">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Branching Logic</h2>
-                  <p className="text-gray-600 mt-1">Configure conditional learning paths</p>
-                </div>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <GitBranch className="h-4 w-4 mr-2" />
-                  Add Rule
-                </Button>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                  <p className="text-sm text-gray-600">
-                    🔀 Create rules based on scores, section completion, or answers
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Branching logic editor will be implemented by Sub-Agent 2
-                  </p>
-                </div>
               </div>
             </Card>
           </TabsContent>
@@ -269,7 +206,7 @@ export default function AdminShell() {
                     🏆 Design certificate layout, fields, and styling
                   </p>
                   <p className="text-xs text-gray-500 mt-2">
-                    Certificate customization will be implemented by Sub-Agent 4
+                    Certificate customization will be implemented by Agent 4
                   </p>
                 </div>
               </div>
