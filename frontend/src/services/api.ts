@@ -309,9 +309,19 @@ export const testsApi = {
   },
 
   create: async (config: TestConfiguration) => {
+    console.log('[testsApi] create called with config:', config)
+    
     // Map frontend test types to backend SIP methods
     const testTypeMap: Record<string, string> = {
       'basic-registration': 'REGISTER',
+      'authentication': 'REGISTER',
+      'call-flow': 'INVITE',
+      'codec-negotiation': 'INVITE',
+      'dtmf': 'INVITE',
+      'hold-resume': 'INVITE',
+      'transfer': 'REFER',
+      'conference': 'INVITE',
+      'rfc-compliance': 'OPTIONS',
       'invite-call': 'INVITE',
       'options-ping': 'OPTIONS',
       'refer-transfer': 'REFER',
@@ -334,7 +344,7 @@ export const testsApi = {
       authenticated: !!(config.credentialId || config.adHocCredentials),
       sdp_body: null,
       expires: 3600,
-      metadata: {
+      test_metadata: {
         endpoint: config.endpoint,
         duration: config.duration,
         callCount: config.callCount,
@@ -344,11 +354,20 @@ export const testsApi = {
       }
     }
     
-    const response = await axiosInstance.post<ApiResponse<TestResult>>(
-      '/tests/run',
-      backendPayload
-    )
-    return response.data
+    console.log('[testsApi] Backend payload:', backendPayload)
+    
+    try {
+      const response = await axiosInstance.post<ApiResponse<TestResult>>(
+        '/tests/run',
+        backendPayload
+      )
+      console.log('[testsApi] API response:', response.data)
+      return response.data
+    } catch (error: any) {
+      console.error('[testsApi] API error:', error)
+      console.error('[testsApi] Error response:', error.response?.data)
+      throw error
+    }
   },
 
   cancel: async (id: string) => {
