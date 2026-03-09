@@ -39,8 +39,16 @@ export interface LearnerSession {
   id: string;
   startedAt: string;
   lastActivityAt: string;
+  currentLevel: 'basic' | 'intermediate' | 'advanced';
   currentSectionId: string | null;
   completedSections: string[];
+  completedLevels: string[]; // ['basic', 'intermediate']
+  levelExamScores: {
+    basic?: number;
+    intermediate?: number;
+    advanced?: number;
+    final?: number;
+  };
   answers: Record<string, string>; // questionId -> answer
   score: number;
   progress: number; // 0-100

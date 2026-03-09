@@ -54,10 +54,19 @@ app.post('/test/run', async (req, res) => {
   }
 
   try {
+    console.log(`📋 Starting ${testType} test with config:`, {
+      localIP: config.localIP || '0.0.0.0',
+      localPort: config.localPort || 15060,
+      transport: config.transport || 'UDP',
+      host: credentials?.host || credentials?.domain,
+      port: credentials?.port || 5060,
+    });
+
     // Create test engine instance
+    // Use unprivileged port (15060) instead of 5060 to avoid permission issues
     const engine = await createTestEngine({
-      localIP: config.localIP || '127.0.0.1',
-      localPort: config.localPort || 5060,
+      localIP: config.localIP || '0.0.0.0',
+      localPort: config.localPort || 15060,
       transport: config.transport || 'UDP',
       timeout: config.timeout || 10000,
       username: credentials?.username,

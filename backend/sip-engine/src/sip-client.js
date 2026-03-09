@@ -27,6 +27,7 @@ export class SIPClient extends EventEmitter {
   async listen() {
     return new Promise((resolve, reject) => {
       if (this.listening) {
+        console.log(`⚠️  SIP Client already listening on ${this.localIP}:${this.localPort}`);
         return resolve();
       }
 
@@ -38,15 +39,23 @@ export class SIPClient extends EventEmitter {
         });
 
         this.socket.on('error', (err) => {
+          console.error(`❌ SIP Socket error on ${this.localIP}:${this.localPort}:`, err.message);
           this.emit('error', err);
+          this.listening = false;
           reject(err);
         });
 
-        this.socket.bind(this.localPort, this.localIP, () => {
-          this.listening = true;
-          this.emit('listening', { ip: this.localIP, port: this.localPort });
-          resolve();
-        });
+        try {
+          this.socket.bind(this.localPort, this.localIP, () => {
+            this.listening = true;
+            console.log(`✓ SIP Socket listening on ${this.localIP}:${this.localPort} (${this.transport})`);
+            this.emit('listening', { ip: this.localIP, port: this.localPort });
+            resolve();
+          });
+        } catch (err) {
+          console.error(`❌ Failed to bind SIP socket to ${this.localIP}:${this.localPort}:`, err.message);
+          reject(err);
+        }
       } else if (this.transport === 'TCP') {
         // TCP implementation (for future)
         reject(new Error('TCP transport not yet implemented'));
