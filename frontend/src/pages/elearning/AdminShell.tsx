@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ContentEditorModule from './admin/ContentEditorModule';
 import QuizManagerModule from './admin/QuizManagerModule';
 import BranchingFlowBuilder from './admin/BranchingFlowBuilder';
+import DataLoader from './admin/DataLoader';
 
 type AdminTab = 'content' | 'quizzes' | 'branching' | 'learners' | 'analytics' | 'certificates' | 'settings';
 
@@ -36,36 +37,37 @@ export default function AdminShell() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
-      {/* Header */}
-      <header className="bg-white border-b border-purple-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-purple-600 rounded-lg">
-                <Shield className="h-6 w-6 text-white" />
+    <DataLoader>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-purple-100">
+        {/* Header */}
+        <header className="bg-white border-b border-purple-200 shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center justify-between h-16">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-600 rounded-lg">
+                  <Shield className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
+                  <p className="text-xs text-gray-500">E-Learning Management</p>
+                </div>
               </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
-                <p className="text-xs text-gray-500">E-Learning Management</p>
-              </div>
+
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleLogout}
+                className="border-purple-300 text-purple-700 hover:bg-purple-50"
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Logout
+              </Button>
             </div>
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleLogout}
-              className="border-purple-300 text-purple-700 hover:bg-purple-50"
-            >
-              <LogOut className="h-4 w-4 mr-2" />
-              Logout
-            </Button>
           </div>
-        </div>
-      </header>
+        </header>
 
-      {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as AdminTab)}>
           <TabsList className="grid grid-cols-7 w-full mb-8 bg-white/50 backdrop-blur">
             <TabsTrigger
@@ -251,5 +253,6 @@ export default function AdminShell() {
         </Tabs>
       </main>
     </div>
+    </DataLoader>
   );
 }
