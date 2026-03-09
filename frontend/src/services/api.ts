@@ -294,11 +294,40 @@ export const testsApi = {
     status?: string
     credentialId?: string
   }) => {
-    const response = await axiosInstance.get<PaginatedResponse<TestResult>>(
+    const response = await axiosInstance.get<any>(
       '/tests/runs',
       { params }
     )
-    return response.data
+    
+    console.log('[testsApi] list response:', response.data)
+    
+    // Transform backend response to frontend format
+    const transformedData = (response.data || []).map((test: any) => {
+      const startedAt = new Date(test.started_at)
+      const completedAt = test.completed_at ? new Date(test.completed_at) : null
+      const duration = completedAt ? completedAt.getTime() - startedAt.getTime() : 0
+      
+      return {
+        id: test.id,
+        testType: test.test_type,
+        credentialName: 'SIP Credential', // TODO: Fetch credential name from credential_id
+        credentialId: test.credential_id,
+        status: test.status,
+        startedAt: test.started_at,
+        completedAt: test.completed_at,
+        duration: Math.round(duration / 1000), // Convert to seconds
+        score: test.status === 'completed' ? 100 : 0, // TODO: Calculate actual score from results
+        organizationId: test.organization_id,
+        metadata: test.test_metadata || {}
+      }
+    })
+    
+    console.log('[testsApi] transformed data:', transformedData)
+    
+    return {
+      success: true,
+      data: transformedData
+    }
   },
 
   get: async (id: string) => {
