@@ -12,6 +12,7 @@ from app.config import settings
 from app.database import init_db
 from app.rate_limit import limiter
 from app.routers import auth, organizations, users, credentials, tests, telnyx, dashboard, adhoc_tests, websocket_endpoint
+from app.routers.elearning import courses, progress, quiz, exam, certificates, admin
 
 # Frontend directory
 FRONTEND_DIR = Path("/app/frontend/dist")
@@ -88,6 +89,14 @@ app.include_router(users.router, prefix="/api")
 app.include_router(credentials.router, prefix="/api")
 app.include_router(tests.router, prefix="/api")
 app.include_router(telnyx.router, prefix="/api")
+
+# E-Learning routers
+app.include_router(courses.router, prefix="/api")
+app.include_router(progress.router, prefix="/api")
+app.include_router(quiz.router, prefix="/api")
+app.include_router(exam.router, prefix="/api")
+app.include_router(certificates.router, prefix="/api")
+app.include_router(admin.router, prefix="/api")
 
 # WebSocket endpoint (no /api prefix, uses /ws directly)
 app.include_router(websocket_endpoint.router)

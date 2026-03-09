@@ -21,6 +21,12 @@ const TestResultDetailPage = lazy(() => import('./pages/TestResultDetailPage').t
 const UsersPage = lazy(() => import('./pages/UsersPage').then(m => ({ default: m.UsersPage })))
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage').then(m => ({ default: m.OrganizationPage })))
 
+// E-Learning pages
+const CoursesListPage = lazy(() => import('./pages/elearning/CoursesListPage'))
+const CourseContentPage = lazy(() => import('./pages/elearning/CourseContentPage'))
+const ExamPage = lazy(() => import('./pages/elearning/ExamPage'))
+const CertificatesPage = lazy(() => import('./pages/elearning/CertificatesPage'))
+
 import './App.css'
 
 // Loading fallback component
@@ -69,6 +75,12 @@ function App() {
             <Route path="/documentation" element={<Suspense fallback={<PageLoader />}><DocumentationPage /></Suspense>} />
             <Route path="/test-results" element={<Suspense fallback={<PageLoader />}><TestResultsPage /></Suspense>} />
             <Route path="/test-results/:id" element={<Suspense fallback={<PageLoader />}><TestResultDetailPage /></Suspense>} />
+            
+            {/* E-Learning Routes */}
+            <Route path="/elearning/courses" element={<Suspense fallback={<PageLoader />}><CoursesListPage /></Suspense>} />
+            <Route path="/elearning/courses/:courseId" element={<Suspense fallback={<PageLoader />}><CourseContentPage /></Suspense>} />
+            <Route path="/elearning/exam/:courseId" element={<Suspense fallback={<PageLoader />}><ExamPage /></Suspense>} />
+            <Route path="/elearning/certificates" element={<Suspense fallback={<PageLoader />}><CertificatesPage /></Suspense>} />
             
             {/* Admin Routes */}
             <Route

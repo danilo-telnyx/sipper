@@ -26,3 +26,9 @@ class User(Base):
     user_roles = relationship("UserRole", back_populates="user", cascade="all, delete-orphan")
     created_credentials = relationship("SIPCredential", foreign_keys="SIPCredential.created_by", back_populates="creator")
     created_test_runs = relationship("TestRun", foreign_keys="TestRun.created_by", back_populates="creator")
+    
+    # E-Learning relationships
+    course_progress = relationship("UserProgress", back_populates="user", cascade="all, delete-orphan")
+    quiz_attempts = relationship("QuizAttempt", back_populates="user", cascade="all, delete-orphan")
+    exam_attempts = relationship("ExamAttempt", back_populates="user", cascade="all, delete-orphan")
+    certificates = relationship("Certificate", back_populates="user", cascade="all, delete-orphan")

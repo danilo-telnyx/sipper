@@ -8,6 +8,7 @@ from uuid import UUID
 
 from app.database import get_db
 from app.models import User
+from app.models.user_role import UserRole
 from app.auth.jwt import verify_token
 
 security = HTTPBearer()
@@ -37,7 +38,7 @@ async def get_current_user(
     # Fetch user from database with roles eagerly loaded
     result = await db.execute(
         select(User)
-        .options(selectinload(User.user_roles).selectinload(lambda ur: ur.role))
+        .options(selectinload(User.user_roles).selectinload(UserRole.role))
         .where(User.id == UUID(user_id))
     )
     user = result.scalar_one_or_none()
