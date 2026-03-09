@@ -410,17 +410,18 @@ export const testsApi = {
           source: r.step_name
         })),
         details: results.find((r: any) => r.step_name === 'summary')?.details || {},
-        rfcCompliance: {
-          passed: [],
-          warnings: [],
-          errors: results.filter((r: any) => r.status === 'error').map((r: any) => r.message)
-        },
-        timings: {
-          dns: 0,
-          connect: 0,
-          tls: 0,
-          total: Math.round(duration / 1000)
-        },
+        rfcCompliance: results.filter((r: any) => r.step_name === 'rfc_violation' || r.status === 'error').map((r: any) => ({
+          rule: r.step_name || 'Unknown',
+          passed: r.status !== 'error',
+          message: r.message || '',
+          details: r.details || {}
+        })),
+        timings: [
+          { phase: 'dns', duration: 0 },
+          { phase: 'connect', duration: 0 },
+          { phase: 'tls', duration: 0 },
+          { phase: 'total', duration: Math.round(duration / 1000) }
+        ],
         networkStats: {
           packetsSent: sipMessages.filter((m: any) => m.direction === 'sent').length,
           packetsReceived: sipMessages.filter((m: any) => m.direction === 'received').length,
