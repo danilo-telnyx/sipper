@@ -400,6 +400,25 @@ export const testsApi = {
         metadata: test.test_metadata || {},
         sipMessages, // Add SIP messages
         testResults: results, // Add raw test results
+        // Add missing fields from TestResult type
+        details: results.find((r: any) => r.step_name === 'summary')?.details || {},
+        rfcCompliance: {
+          passed: [],
+          warnings: [],
+          errors: results.filter((r: any) => r.status === 'error').map((r: any) => r.message)
+        },
+        timings: {
+          dns: 0,
+          connect: 0,
+          tls: 0,
+          total: Math.round(duration / 1000)
+        },
+        networkStats: {
+          packetsSent: sipMessages.filter((m: any) => m.direction === 'sent').length,
+          packetsReceived: sipMessages.filter((m: any) => m.direction === 'received').length,
+          bytesReceived: 0,
+          bytesSent: 0
+        }
       }
     }
   },
