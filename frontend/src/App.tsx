@@ -1,6 +1,7 @@
 import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './contexts/AuthContext'
+import { RoleProvider } from './contexts/RoleContext'
 import { ELearningProvider } from './contexts/ELearningContext'
 import { ELearningAdminProvider } from './contexts/ELearningAdminContext'
 import { Toaster } from './components/ui/toaster'
@@ -50,9 +51,10 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <ELearningProvider>
-          <ELearningAdminProvider>
-            <Routes>
+        <RoleProvider>
+          <ELearningProvider>
+            <ELearningAdminProvider>
+              <Routes>
               {/* Root redirect to dashboard or login */}
               <Route
                 path="/"
@@ -147,6 +149,7 @@ function App() {
             <Toaster />
           </ELearningAdminProvider>
         </ELearningProvider>
+      </RoleProvider>
       </AuthProvider>
     </BrowserRouter>
   )
