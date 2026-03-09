@@ -24,13 +24,18 @@ interface LearnerSidebarProps {
   onFinalTestClick: () => void;
 }
 
+interface LearnerSidebarPropsExtended extends LearnerSidebarProps {
+  onLevelExamClick?: (levelId: string) => void;
+}
+
 export default function LearnerSidebar({
   sessionId,
   currentSectionId,
   onSectionSelect,
   onFinalTestClick,
-}: LearnerSidebarProps) {
-  const { state, getSectionsByLevel } = useELearning();
+  onLevelExamClick,
+}: LearnerSidebarPropsExtended) {
+  const { state, getSectionsByLevel, isLevelUnlocked, canTakeLevelExam } = useELearning();
   const [expandedLevels, setExpandedLevels] = useState<Set<string>>(
     new Set(['basic'])
   );
@@ -52,15 +57,31 @@ export default function LearnerSidebar({
   };
 
   const getSectionStatus = (
-    sectionId: string
+    sectionId: string,
+    levelId: string
   ): 'completed' | 'current' | 'locked' => {
+    // Check if level is unlocked
+    if (!isLevelUnlocked(sessionId, levelId)) return 'locked';
+    
     if (completedSections.includes(sectionId)) return 'completed';
     if (sectionId === currentSectionId) return 'current';
+    
+    // Check if previous section in same level is completed
+    const levelSections = getSectionsByLevel(levelId).sort((a, b) => a.order - b.order);
+    const sectionIndex = levelSections.findIndex(s => s.id === sectionId);
+    
+    if (sectionIndex > 0) {
+      const previousSection = levelSections[sectionIndex - 1];
+      if (!completedSections.includes(previousSection.id)) {
+        return 'locked';
+      }
+    }
+    
     return 'locked';
   };
 
-  const getQuizStatus = (sectionId: string): string => {
-    const status = getSectionStatus(sectionId);
+  const getQuizStatus = (sectionId: string, levelId: string): string => {
+    const status = getSectionStatus(sectionId, levelId);
     if (status === 'completed') return 'passed';
     if (status === 'current') return 'in-progress';
     if (status === 'locked') return 'locked';
@@ -69,6 +90,8 @@ export default function LearnerSidebar({
 
   const allSectionsCompleted =
     completedSections.length === state.courseData.sections.length;
+  
+  const allLevelsCompleted = session?.completedLevels?.length === 3;
 
   return (
     <div className="flex flex-col h-full">
@@ -92,25 +115,52 @@ export default function LearnerSidebar({
         {state.courseData.levels.map((level) => {
           const sections = getSectionsByLevel(level.id);
           const isExpanded = expandedLevels.has(level.id);
+          const levelUnlocked = isLevelUnlocked(sessionId, level.id);
+          const canTakeExam = canTakeLevelExam(sessionId, level.id);
+          const examScore = session?.levelExamScores?.[level.name];
+          const examPassed = examScore !== undefined && (
+            (level.name === 'basic' && examScore >= 70) ||
+            (level.name === 'intermediate' && examScore >= 75) ||
+            (level.name === 'advanced' && examScore >= 80)
+          );
 
           return (
             <div key={level.id} className="space-y-2">
               {/* Level Header */}
               <button
                 onClick={() => toggleLevel(level.id)}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-lg bg-teal-100 hover:bg-teal-200 transition-colors"
+                className={cn(
+                  "w-full flex items-center gap-2 px-3 py-2 rounded-lg transition-colors",
+                  levelUnlocked 
+                    ? "bg-teal-100 hover:bg-teal-200" 
+                    : "bg-gray-100 opacity-60"
+                )}
               >
+                {!levelUnlocked && <Lock className="h-4 w-4 text-gray-500" />}
                 {isExpanded ? (
                   <ChevronDown className="h-4 w-4 text-teal-600" />
                 ) : (
                   <ChevronRight className="h-4 w-4 text-teal-600" />
                 )}
-                <span className="font-semibold text-teal-900 capitalize">
+                <span className={cn(
+                  "font-semibold capitalize",
+                  levelUnlocked ? "text-teal-900" : "text-gray-500"
+                )}>
                   {level.name}
                 </span>
+                {examPassed && (
+                  <Badge variant="secondary" className="bg-green-200 text-green-800">
+                    ✓ {examScore}%
+                  </Badge>
+                )}
                 <Badge
                   variant="secondary"
-                  className="ml-auto bg-teal-200 text-teal-800"
+                  className={cn(
+                    "ml-auto",
+                    levelUnlocked 
+                      ? "bg-teal-200 text-teal-800" 
+                      : "bg-gray-200 text-gray-500"
+                  )}
                 >
                   {sections.length}
                 </Badge>
@@ -120,8 +170,8 @@ export default function LearnerSidebar({
               {isExpanded && (
                 <div className="ml-4 space-y-1">
                   {sections.map((section) => {
-                    const status = getSectionStatus(section.id);
-                    const quizStatus = getQuizStatus(section.id);
+                    const status = getSectionStatus(section.id, level.id);
+                    const quizStatus = getQuizStatus(section.id, level.id);
                     const isCurrent = section.id === currentSectionId;
                     const isLocked = status === 'locked';
 
@@ -202,6 +252,29 @@ export default function LearnerSidebar({
                       </button>
                     );
                   })}
+                  
+                  {/* Level Exam Button */}
+                  {levelUnlocked && canTakeExam && !examPassed && onLevelExamClick && (
+                    <Button
+                      onClick={() => onLevelExamClick(level.id)}
+                      className="w-full mt-2 bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600 text-white"
+                    >
+                      <Award className="h-4 w-4 mr-2" />
+                      Take {level.name} Exam
+                    </Button>
+                  )}
+                  
+                  {examScore !== undefined && !examPassed && (
+                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-xs text-yellow-800">
+                      Score: {examScore}% - Need {
+                        level.name === 'basic' ? '70%' :
+                        level.name === 'intermediate' ? '75%' : '80%'
+                      } to pass. <button 
+                        onClick={() => onLevelExamClick && onLevelExamClick(level.id)}
+                        className="underline font-semibold"
+                      >Retry</button>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
@@ -213,20 +286,20 @@ export default function LearnerSidebar({
       <div className="p-4 border-t border-teal-200">
         <Button
           onClick={onFinalTestClick}
-          disabled={!allSectionsCompleted}
+          disabled={!allLevelsCompleted}
           className={cn(
             'w-full',
-            allSectionsCompleted
+            allLevelsCompleted
               ? 'bg-gradient-to-r from-teal-500 to-cyan-500 hover:from-teal-600 hover:to-cyan-600'
               : 'bg-gray-300 cursor-not-allowed'
           )}
         >
           <Award className="h-5 w-5 mr-2" />
-          {allSectionsCompleted ? 'Start Final Test' : 'Complete All Sections'}
+          {allLevelsCompleted ? 'Start Final Test' : 'Complete All Levels'}
         </Button>
-        {!allSectionsCompleted && (
+        {!allLevelsCompleted && (
           <p className="text-xs text-gray-500 text-center mt-2">
-            Complete all sections to unlock
+            Pass all level exams (Basic, Intermediate, Advanced) to unlock
           </p>
         )}
       </div>

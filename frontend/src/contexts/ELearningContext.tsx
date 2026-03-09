@@ -111,6 +111,7 @@ type ELearningAction =
   | { type: 'UPDATE_SESSION'; payload: { id: string; updates: Partial<LearnerSession> } }
   | { type: 'COMPLETE_SECTION'; payload: { sessionId: string; sectionId: string } }
   | { type: 'SUBMIT_ANSWER'; payload: { sessionId: string; questionId: string; answer: string } }
+  | { type: 'COMPLETE_LEVEL_EXAM'; payload: { sessionId: string; level: 'basic' | 'intermediate' | 'advanced'; score: number } }
   | { type: 'ADD_BRANCHING_RULE'; payload: BranchingRule }
   | { type: 'UPDATE_BRANCHING_RULE'; payload: { id: string; updates: Partial<BranchingRule> } }
   | { type: 'DELETE_BRANCHING_RULE'; payload: string }
@@ -285,6 +286,48 @@ function elearningReducer(state: ELearningState, action: ELearningAction): ELear
         },
       };
 
+    case 'COMPLETE_LEVEL_EXAM': {
+      const session = state.learnerSessions[action.payload.sessionId];
+      const { level, score } = action.payload;
+      
+      // Determine next level
+      let nextLevel: 'basic' | 'intermediate' | 'advanced' = session.currentLevel;
+      const newCompletedLevels = [...session.completedLevels];
+      
+      if (level === 'basic' && score >= 70) {
+        nextLevel = 'intermediate';
+        if (!newCompletedLevels.includes('basic')) {
+          newCompletedLevels.push('basic');
+        }
+      } else if (level === 'intermediate' && score >= 75) {
+        nextLevel = 'advanced';
+        if (!newCompletedLevels.includes('intermediate')) {
+          newCompletedLevels.push('intermediate');
+        }
+      } else if (level === 'advanced' && score >= 80) {
+        if (!newCompletedLevels.includes('advanced')) {
+          newCompletedLevels.push('advanced');
+        }
+      }
+      
+      return {
+        ...state,
+        learnerSessions: {
+          ...state.learnerSessions,
+          [action.payload.sessionId]: {
+            ...session,
+            currentLevel: nextLevel,
+            completedLevels: newCompletedLevels,
+            levelExamScores: {
+              ...session.levelExamScores,
+              [level]: score,
+            },
+            lastActivityAt: new Date().toISOString(),
+          },
+        },
+      };
+    }
+
     case 'ADD_BRANCHING_RULE':
       return {
         ...state,
@@ -350,6 +393,8 @@ interface ELearningContextValue {
   getQuestionsBySection: (sectionId: string) => Question[];
   getSessionProgress: (sessionId: string) => number;
   evaluateBranchingRules: (sessionId: string) => BranchingRule[];
+  isLevelUnlocked: (sessionId: string, levelId: string) => boolean;
+  canTakeLevelExam: (sessionId: string, levelId: string) => boolean;
 }
 
 const ELearningContext = createContext<ELearningContextValue | undefined>(undefined);
@@ -449,6 +494,41 @@ export function ELearningProvider({ children }: ELearningProviderProps) {
     }
   };
 
+  const isLevelUnlocked = (sessionId: string, levelId: string): boolean => {
+    const session = state.learnerSessions[sessionId];
+    if (!session) return false;
+
+    // Basic is always unlocked
+    if (levelId === 'basic') return true;
+
+    // Intermediate unlocks after passing Basic exam (≥70%)
+    if (levelId === 'intermediate') {
+      return (session.levelExamScores.basic ?? 0) >= 70;
+    }
+
+    // Advanced unlocks after passing Intermediate exam (≥75%)
+    if (levelId === 'advanced') {
+      return (session.levelExamScores.intermediate ?? 0) >= 75;
+    }
+
+    return false;
+  };
+
+  const canTakeLevelExam = (sessionId: string, levelId: string): boolean => {
+    const session = state.learnerSessions[sessionId];
+    if (!session) return false;
+
+    // Get all sections for this level
+    const levelSections = getSectionsByLevel(levelId);
+    
+    // Check if all sections in the level are completed
+    const allSectionsCompleted = levelSections.every(section =>
+      session.completedSections.includes(section.id)
+    );
+
+    return allSectionsCompleted;
+  };
+
   const value: ELearningContextValue = {
     state,
     dispatch,
@@ -456,6 +536,8 @@ export function ELearningProvider({ children }: ELearningProviderProps) {
     getQuestionsBySection,
     getSessionProgress,
     evaluateBranchingRules,
+    isLevelUnlocked,
+    canTakeLevelExam,
   };
 
   return <ELearningContext.Provider value={value}>{children}</ELearningContext.Provider>;

@@ -29,6 +29,8 @@ const MOCK_LEARNERS = [
     startedAt: '2026-02-15T10:00:00Z',
     lastActive: '2026-03-08T16:30:00Z',
     level: 'intermediate',
+    completedLevels: ['basic'],
+    levelExamScores: { basic: 85, intermediate: 68 },
     sectionsComplete: 8,
     totalSections: 12,
     currentSection: 'SIP Registrations',
@@ -42,7 +44,9 @@ const MOCK_LEARNERS = [
     email: 'bob@example.com',
     startedAt: '2026-03-01T09:00:00Z',
     lastActive: '2026-03-09T11:00:00Z',
-    level: 'basic',
+    level: 'advanced',
+    completedLevels: ['basic', 'intermediate', 'advanced'],
+    levelExamScores: { basic: 95, intermediate: 88, advanced: 92, final: 94 },
     sectionsComplete: 12,
     totalSections: 12,
     currentSection: 'Completed',
@@ -57,6 +61,8 @@ const MOCK_LEARNERS = [
     startedAt: '2026-02-20T14:00:00Z',
     lastActive: '2026-03-07T13:00:00Z',
     level: 'advanced',
+    completedLevels: ['basic', 'intermediate'],
+    levelExamScores: { basic: 72, intermediate: 76 },
     sectionsComplete: 5,
     totalSections: 15,
     currentSection: 'SIP Security',
@@ -71,6 +77,8 @@ const MOCK_LEARNERS = [
     startedAt: '2026-03-05T08:00:00Z',
     lastActive: '2026-03-05T10:00:00Z',
     level: 'basic',
+    completedLevels: [],
+    levelExamScores: {},
     sectionsComplete: 2,
     totalSections: 12,
     currentSection: 'SIP Messages',
@@ -84,7 +92,9 @@ const MOCK_LEARNERS = [
     email: 'emma@example.com',
     startedAt: '2026-02-10T11:00:00Z',
     lastActive: '2026-03-09T09:00:00Z',
-    level: 'intermediate',
+    level: 'advanced',
+    completedLevels: ['basic', 'intermediate', 'advanced'],
+    levelExamScores: { basic: 88, intermediate: 85, advanced: 90, final: 89 },
     sectionsComplete: 12,
     totalSections: 12,
     currentSection: 'Completed',
@@ -116,14 +126,26 @@ export default function LearnerDashboardModule() {
     const completed = learners.filter(l => l.sectionsComplete === l.totalSections).length;
     const certified = learners.filter(l => l.certificateId).length;
 
-    // Most failed section (mock calculation)
-    const sectionFailures = {
-      'SIP Headers': 12,
-      'SIP Security': 8,
-      'SDP Negotiation': 6,
-      'SIP Proxying': 5,
-    };
-    const mostFailedSection = Object.entries(sectionFailures).sort((a, b) => b[1] - a[1])[0];
+    // Level distribution
+    const basicCount = learners.filter(l => l.level === 'basic' && l.completedLevels?.length === 0).length;
+    const intermediateCount = learners.filter(l => l.level === 'intermediate' || (l.completedLevels?.includes('basic') && !l.completedLevels?.includes('intermediate'))).length;
+    const advancedCount = learners.filter(l => l.level === 'advanced' || l.completedLevels?.includes('intermediate')).length;
+
+    // Level exam pass rates
+    const basicExams = learners.filter(l => l.levelExamScores?.basic !== undefined);
+    const basicPassRate = basicExams.length > 0 
+      ? ((basicExams.filter(l => l.levelExamScores.basic >= 70).length / basicExams.length) * 100).toFixed(1)
+      : 0;
+
+    const intermediateExams = learners.filter(l => l.levelExamScores?.intermediate !== undefined);
+    const intermediatePassRate = intermediateExams.length > 0 
+      ? ((intermediateExams.filter(l => l.levelExamScores.intermediate >= 75).length / intermediateExams.length) * 100).toFixed(1)
+      : 0;
+
+    const advancedExams = learners.filter(l => l.levelExamScores?.advanced !== undefined);
+    const advancedPassRate = advancedExams.length > 0 
+      ? ((advancedExams.filter(l => l.levelExamScores.advanced >= 80).length / advancedExams.length) * 100).toFixed(1)
+      : 0;
 
     // Average score
     const allScores = learners.flatMap(l => l.quizScores);
@@ -139,8 +161,13 @@ export default function LearnerDashboardModule() {
       completedPercent: total > 0 ? ((completed / total) * 100).toFixed(1) : 0,
       certified,
       certifiedPercent: total > 0 ? ((certified / total) * 100).toFixed(1) : 0,
-      mostFailedSection: mostFailedSection ? `${mostFailedSection[0]} (${mostFailedSection[1]} fails)` : 'N/A',
       avgScore,
+      basicCount,
+      intermediateCount,
+      advancedCount,
+      basicPassRate,
+      intermediatePassRate,
+      advancedPassRate,
     };
   }, [learners]);
 
@@ -320,18 +347,87 @@ export default function LearnerDashboardModule() {
 
           <div className="bg-white rounded-lg shadow-md p-4">
             <div className="flex items-center gap-2 mb-2">
-              <AlertCircle className="h-5 w-5 text-red-600" />
-              <span className="text-sm font-medium text-gray-600">Most Failed</span>
-            </div>
-            <p className="text-xs font-semibold text-gray-900 mt-2">{stats.mostFailedSection}</p>
-          </div>
-
-          <div className="bg-white rounded-lg shadow-md p-4">
-            <div className="flex items-center gap-2 mb-2">
               <TrendingUp className="h-5 w-5 text-purple-600" />
               <span className="text-sm font-medium text-gray-600">Avg Score</span>
             </div>
             <p className="text-3xl font-bold text-gray-900">{stats.avgScore}%</p>
+          </div>
+        </div>
+
+        {/* Level Analytics Section */}
+        <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+          <h2 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <Award className="h-6 w-6 text-purple-600" />
+            Level Progression Analytics
+          </h2>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            {/* Basic Level */}
+            <div className="border-2 border-teal-200 rounded-lg p-4 bg-teal-50">
+              <h3 className="font-semibold text-lg text-teal-900 mb-3">Basic Level</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700">Active Learners:</span>
+                  <span className="text-2xl font-bold text-teal-700">{stats.basicCount}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700">Exam Pass Rate:</span>
+                  <span className="text-lg font-semibold text-teal-700">{stats.basicPassRate}%</span>
+                </div>
+                <div className="text-xs text-gray-600 mt-2">
+                  Passing score: ≥70%
+                </div>
+              </div>
+            </div>
+
+            {/* Intermediate Level */}
+            <div className="border-2 border-blue-200 rounded-lg p-4 bg-blue-50">
+              <h3 className="font-semibold text-lg text-blue-900 mb-3">Intermediate Level</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700">Active Learners:</span>
+                  <span className="text-2xl font-bold text-blue-700">{stats.intermediateCount}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700">Exam Pass Rate:</span>
+                  <span className="text-lg font-semibold text-blue-700">{stats.intermediatePassRate}%</span>
+                </div>
+                <div className="text-xs text-gray-600 mt-2">
+                  Passing score: ≥75%
+                </div>
+              </div>
+            </div>
+
+            {/* Advanced Level */}
+            <div className="border-2 border-purple-200 rounded-lg p-4 bg-purple-50">
+              <h3 className="font-semibold text-lg text-purple-900 mb-3">Advanced Level</h3>
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700">Active Learners:</span>
+                  <span className="text-2xl font-bold text-purple-700">{stats.advancedCount}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-700">Exam Pass Rate:</span>
+                  <span className="text-lg font-semibold text-purple-700">{stats.advancedPassRate}%</span>
+                </div>
+                <div className="text-xs text-gray-600 mt-2">
+                  Passing score: ≥80%
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-200 pt-4">
+            <h4 className="font-medium text-gray-900 mb-2">Level Progression Flow:</h4>
+            <div className="flex items-center gap-3 text-sm text-gray-700">
+              <span className="px-3 py-1 bg-teal-100 text-teal-800 rounded font-semibold">Basic</span>
+              <span className="text-gray-400">→ Exam ≥70% →</span>
+              <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded font-semibold">Intermediate</span>
+              <span className="text-gray-400">→ Exam ≥75% →</span>
+              <span className="px-3 py-1 bg-purple-100 text-purple-800 rounded font-semibold">Advanced</span>
+              <span className="text-gray-400">→ Exam ≥80% →</span>
+              <span className="px-3 py-1 bg-green-100 text-green-800 rounded font-semibold">Final Test</span>
+            </div>
           </div>
         </div>
 
@@ -523,31 +619,53 @@ export default function LearnerDashboardModule() {
 
                               <div className="grid grid-cols-3 gap-4">
                                 <div>
-                                  <p className="text-xs font-medium text-gray-600 mb-1">Quiz Scores</p>
-                                  <div className="flex gap-2">
-                                    {learner.quizScores.map((score, idx) => (
-                                      <span
-                                        key={idx}
-                                        className={`px-2 py-1 text-xs font-semibold rounded ${
-                                          score >= 80 ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                                        }`}
-                                      >
-                                        Q{idx + 1}: {score}%
+                                  <p className="text-xs font-medium text-gray-600 mb-1">Level Exam Scores</p>
+                                  <div className="flex gap-2 flex-wrap">
+                                    {learner.levelExamScores?.basic !== undefined && (
+                                      <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                                        learner.levelExamScores.basic >= 70 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                      }`}>
+                                        Basic: {learner.levelExamScores.basic}%
                                       </span>
-                                    ))}
+                                    )}
+                                    {learner.levelExamScores?.intermediate !== undefined && (
+                                      <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                                        learner.levelExamScores.intermediate >= 75 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                      }`}>
+                                        Int: {learner.levelExamScores.intermediate}%
+                                      </span>
+                                    )}
+                                    {learner.levelExamScores?.advanced !== undefined && (
+                                      <span className={`px-2 py-1 text-xs font-semibold rounded ${
+                                        learner.levelExamScores.advanced >= 80 ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                                      }`}>
+                                        Adv: {learner.levelExamScores.advanced}%
+                                      </span>
+                                    )}
+                                    {!learner.levelExamScores || Object.keys(learner.levelExamScores).length === 0 && (
+                                      <span className="text-xs text-gray-400">No exams taken</span>
+                                    )}
+                                  </div>
+                                </div>
+
+                                <div>
+                                  <p className="text-xs font-medium text-gray-600 mb-1">Completed Levels</p>
+                                  <div className="flex gap-1">
+                                    {learner.completedLevels?.length > 0 ? (
+                                      learner.completedLevels.map(level => (
+                                        <span key={level} className="px-2 py-1 text-xs font-semibold rounded bg-purple-100 text-purple-700 capitalize">
+                                          {level}
+                                        </span>
+                                      ))
+                                    ) : (
+                                      <span className="text-xs text-gray-400">None</span>
+                                    )}
                                   </div>
                                 </div>
 
                                 <div>
                                   <p className="text-xs font-medium text-gray-600 mb-1">Certificate ID</p>
                                   <p className="text-sm font-mono text-gray-900">{learner.certificateId || 'N/A'}</p>
-                                </div>
-
-                                <div>
-                                  <p className="text-xs font-medium text-gray-600 mb-1">Enrollment Duration</p>
-                                  <p className="text-sm text-gray-900">
-                                    {Math.ceil((new Date() - new Date(learner.startedAt)) / (1000 * 60 * 60 * 24))} days
-                                  </p>
                                 </div>
                               </div>
 

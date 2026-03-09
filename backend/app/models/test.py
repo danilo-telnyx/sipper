@@ -1,6 +1,6 @@
 """Test Run and Test Result models."""
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, String, DateTime, ForeignKey, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
@@ -17,7 +17,7 @@ class TestRun(Base):
     credential_id = Column(UUID(as_uuid=True), ForeignKey("sip_credentials.id", ondelete="SET NULL"))
     test_type = Column(String(50), nullable=False)  # e.g., 'registration', 'call', 'message'
     status = Column(String(50), default="pending", nullable=False)  # pending, running, completed, failed
-    started_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    started_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     completed_at = Column(DateTime)
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"))
     test_metadata = Column(JSONB, default={}, nullable=False)
@@ -40,7 +40,7 @@ class TestResult(Base):
     status = Column(String(50), nullable=False)  # success, failure, warning
     message = Column(Text)
     details = Column(JSONB, default={}, nullable=False)
-    timestamp = Column(DateTime, default=datetime.utcnow, nullable=False)
+    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     
     # Relationships
     test_run = relationship("TestRun", back_populates="results")

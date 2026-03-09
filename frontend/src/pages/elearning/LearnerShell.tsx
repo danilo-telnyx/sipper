@@ -18,10 +18,11 @@ import { Button } from '@/components/ui/button';
 import LearnerSidebar from './learner/LearnerSidebar';
 import ContentViewer from './learner/ContentViewer';
 import SectionQuiz from './learner/SectionQuiz';
+import LevelExam from './learner/LevelExam';
 import FinalTest from './learner/FinalTest';
 import Certificate from './learner/Certificate';
 
-type View = 'content' | 'quiz' | 'final-test' | 'certificate';
+type View = 'content' | 'quiz' | 'level-exam' | 'final-test' | 'certificate';
 
 export default function LearnerShell() {
   const navigate = useNavigate();
@@ -31,6 +32,7 @@ export default function LearnerShell() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [currentView, setCurrentView] = useState<View>('content');
   const [currentSectionId, setCurrentSectionId] = useState<string | null>(null);
+  const [currentLevelExam, setCurrentLevelExam] = useState<string | null>(null);
   const [sessionId] = useState<string>(() => {
     // Create or retrieve session
     const existingSessionId = Object.keys(state.learnerSessions)[0];
@@ -46,8 +48,11 @@ export default function LearnerShell() {
         id: newSessionId,
         startedAt: new Date().toISOString(),
         lastActivityAt: new Date().toISOString(),
+        currentLevel: 'basic',
         currentSectionId: null,
         completedSections: [],
+        completedLevels: [],
+        levelExamScores: {},
         answers: {},
         score: 0,
         progress: 0,
@@ -110,6 +115,24 @@ export default function LearnerShell() {
     } else {
       // Stay on current section to review
       setCurrentView('content');
+    }
+  };
+
+  const handleLevelExamClick = (levelId: string) => {
+    setCurrentLevelExam(levelId);
+    setCurrentView('level-exam');
+  };
+
+  const handleLevelExamComplete = (passed: boolean, score: number) => {
+    setCurrentLevelExam(null);
+    setCurrentView('content');
+    
+    // Show success/failure message
+    if (passed) {
+      // Could add a toast notification here
+      console.log(`Level exam passed with ${score}%!`);
+    } else {
+      console.log(`Level exam failed with ${score}%. Review material and try again.`);
     }
   };
 
@@ -205,6 +228,7 @@ export default function LearnerShell() {
               sessionId={sessionId}
               currentSectionId={currentSectionId}
               onSectionSelect={handleSectionSelect}
+              onLevelExamClick={handleLevelExamClick}
               onFinalTestClick={handleStartFinalTest}
             />
 
@@ -248,6 +272,19 @@ export default function LearnerShell() {
                   onClose={() => setCurrentView('content')}
                 />
               </div>
+            )}
+
+            {/* Level Exam View */}
+            {currentView === 'level-exam' && currentLevelExam && (
+              <LevelExam
+                sessionId={sessionId}
+                levelId={currentLevelExam}
+                onComplete={handleLevelExamComplete}
+                onCancel={() => {
+                  setCurrentLevelExam(null);
+                  setCurrentView('content');
+                }}
+              />
             )}
 
             {/* Final Test Modal */}

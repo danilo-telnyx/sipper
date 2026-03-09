@@ -22,6 +22,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ContentEditorModule from './admin/ContentEditorModule';
 import QuizManagerModule from './admin/QuizManagerModule';
 import BranchingFlowBuilder from './admin/BranchingFlowBuilder';
+import LearnerDashboardModule from './admin/LearnerDashboardModule';
 import DataLoader from './admin/DataLoader';
 
 type AdminTab = 'content' | 'quizzes' | 'branching' | 'learners' | 'analytics' | 'certificates' | 'settings';
@@ -137,26 +138,8 @@ export default function AdminShell() {
           </TabsContent>
 
           {/* Learners Tab */}
-          <TabsContent value="learners">
-            <Card className="p-6 border-purple-200">
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h2 className="text-2xl font-bold text-gray-900">Learner Sessions</h2>
-                  <p className="text-gray-600 mt-1">Track learner progress and activity</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="p-4 bg-purple-50 rounded-lg border border-purple-200">
-                  <p className="text-sm text-gray-600">
-                    👥 View all learner sessions, progress tracking, and completion status
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Learner tracking dashboard will be implemented by Agent 4
-                  </p>
-                </div>
-              </div>
-            </Card>
+          <TabsContent value="learners" className="mt-0">
+            <LearnerDashboardModule />
           </TabsContent>
 
           {/* Analytics Tab */}
