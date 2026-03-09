@@ -77,7 +77,7 @@ SECRET_KEY=<paste generated secret key>
 ENCRYPTION_KEY=<paste generated Fernet key>
 
 # CORS (comma-separated origins)
-CORS_ORIGINS=http://localhost:8000,http://localhost:3000
+CORS_ORIGINS=http://localhost:8000,http://localhost:8001
 ```
 
 ### 4. Verify configuration
@@ -336,7 +336,7 @@ npm install
 npm run dev
 ```
 
-Frontend runs on `http://localhost:5173` and proxies API requests to backend.
+Frontend runs on `http://localhost:8001` and proxies API requests to backend.
 
 **Important:** The SIP Engine must be running for tests to execute! The backend calls the SIP Engine via HTTP to run actual SIP protocol tests.
 
