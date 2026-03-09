@@ -241,7 +241,12 @@ export function TestRunnerPage() {
   }
 
   const handleRunTest = () => {
+    console.log('[TestRunner] handleRunTest called')
+    console.log('[TestRunner] selectedCredential:', selectedCredential)
+    console.log('[TestRunner] adHocCredentials:', adHocCredentials)
+    
     if (!selectedCredential && !adHocCredentials) {
+      console.log('[TestRunner] No credentials, showing toast')
       toast({
         title: 'No credential selected',
         description: 'Please select a SIP credential or provide ad-hoc credentials',
@@ -260,6 +265,8 @@ export function TestRunnerPage() {
       concurrentCalls: advancedOptions.concurrentCalls,
     }
 
+    console.log('[TestRunner] Test configuration:', config)
+    console.log('[TestRunner] Calling API to run test...')
     runTestMutation.mutate(config)
     setCurrentStep(3) // Move to execute step
   }
@@ -370,9 +377,11 @@ export function TestRunnerPage() {
               setAdHocCredentials(null)
             }}
             onAdHocSubmit={(creds) => {
+              console.log('[TestRunner] Ad-hoc credentials received:', creds)
               setAdHocCredentials(creds)
               setSelectedCredential('')
               setCurrentStep(1) // Auto-advance to next step
+              console.log('[TestRunner] Advanced to step 1')
             }}
             disabled={isRunning}
           />

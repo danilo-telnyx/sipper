@@ -61,8 +61,16 @@ export function AdHocCredentialForm({ onSubmit, disabled }: AdHocCredentialFormP
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    if (validate()) {
+    console.log('[AdHocForm] Submit clicked, formData:', formData)
+    
+    const isValid = validate()
+    console.log('[AdHocForm] Validation result:', isValid, 'Errors:', errors)
+    
+    if (isValid) {
+      console.log('[AdHocForm] Calling onSubmit with credentials')
       onSubmit(formData)
+    } else {
+      console.log('[AdHocForm] Validation failed, not submitting')
     }
   }
 
