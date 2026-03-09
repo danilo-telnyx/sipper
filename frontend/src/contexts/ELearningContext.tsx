@@ -501,14 +501,17 @@ export function ELearningProvider({ children }: ELearningProviderProps) {
     // Basic is always unlocked
     if (levelId === 'basic') return true;
 
+    // Ensure levelExamScores exists (handle old sessions)
+    const examScores = session.levelExamScores || {};
+
     // Intermediate unlocks after passing Basic exam (≥70%)
     if (levelId === 'intermediate') {
-      return (session.levelExamScores.basic ?? 0) >= 70;
+      return (examScores.basic ?? 0) >= 70;
     }
 
     // Advanced unlocks after passing Intermediate exam (≥75%)
     if (levelId === 'advanced') {
-      return (session.levelExamScores.intermediate ?? 0) >= 75;
+      return (examScores.intermediate ?? 0) >= 75;
     }
 
     return false;
@@ -518,12 +521,15 @@ export function ELearningProvider({ children }: ELearningProviderProps) {
     const session = state.learnerSessions[sessionId];
     if (!session) return false;
 
+    // Ensure completedSections exists (handle old sessions)
+    const completedSections = session.completedSections || [];
+
     // Get all sections for this level
     const levelSections = getSectionsByLevel(levelId);
     
     // Check if all sections in the level are completed
     const allSectionsCompleted = levelSections.every(section =>
-      session.completedSections.includes(section.id)
+      completedSections.includes(section.id)
     );
 
     return allSectionsCompleted;
