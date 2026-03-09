@@ -23,7 +23,12 @@ const TestResultDetailPage = lazy(() => import('./pages/TestResultDetailPage').t
 const UsersPage = lazy(() => import('./pages/UsersPage').then(m => ({ default: m.UsersPage })))
 const OrganizationPage = lazy(() => import('./pages/OrganizationPage').then(m => ({ default: m.OrganizationPage })))
 
-// E-Learning pages
+// E-Learning pages (new dual-persona architecture)
+const RoleSelection = lazy(() => import('./pages/elearning/RoleSelection'))
+const AdminShell = lazy(() => import('./pages/elearning/AdminShell'))
+const LearnerShell = lazy(() => import('./pages/elearning/LearnerShell'))
+
+// E-Learning pages (old - kept for backward compatibility)
 const CoursesListPage = lazy(() => import('./pages/elearning/CoursesListPage'))
 const CourseContentPage = lazy(() => import('./pages/elearning/CourseContentPage'))
 const ExamPage = lazy(() => import('./pages/elearning/ExamPage'))
@@ -81,12 +86,17 @@ function App() {
                 <Route path="/test-results" element={<Suspense fallback={<PageLoader />}><TestResultsPage /></Suspense>} />
                 <Route path="/test-results/:id" element={<Suspense fallback={<PageLoader />}><TestResultDetailPage /></Suspense>} />
                 
-                {/* E-Learning Routes */}
+                {/* E-Learning Routes (NEW dual-persona architecture) */}
+                <Route path="/elearning" element={<Suspense fallback={<PageLoader />}><RoleSelection /></Suspense>} />
+                <Route path="/elearning/admin" element={<Suspense fallback={<PageLoader />}><AdminShell /></Suspense>} />
+                <Route path="/elearning/learner" element={<Suspense fallback={<PageLoader />}><LearnerShell /></Suspense>} />
+                
+                {/* E-Learning Routes (OLD - kept for backward compatibility) */}
                 <Route path="/elearning/courses" element={<Suspense fallback={<PageLoader />}><CoursesListPage /></Suspense>} />
                 <Route path="/elearning/courses/:courseId" element={<Suspense fallback={<PageLoader />}><CourseContentPage /></Suspense>} />
                 <Route path="/elearning/exam/:courseId" element={<Suspense fallback={<PageLoader />}><ExamPage /></Suspense>} />
                 <Route path="/elearning/certificates" element={<Suspense fallback={<PageLoader />}><CertificatesPage /></Suspense>} />
-                <Route path="/elearning/admin" element={<Suspense fallback={<PageLoader />}><AdminPage /></Suspense>} />
+                <Route path="/elearning/admin-old" element={<Suspense fallback={<PageLoader />}><AdminPage /></Suspense>} />
                 
                 {/* Admin Routes */}
                 <Route
