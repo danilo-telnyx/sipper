@@ -245,11 +245,11 @@ export function DashboardLayout() {
             <div className="px-4 py-3 text-xs text-muted-foreground space-y-1">
               <div className="flex justify-between">
                 <span>Frontend:</span>
-                <span className="font-mono">v0.6.0</span>
+                <span className="font-mono">v1.0.0</span>
               </div>
               <div className="flex justify-between">
                 <span>Backend:</span>
-                <span className="font-mono">v0.6.0</span>
+                <span className="font-mono">v1.0.0</span>
               </div>
             </div>
           </div>
