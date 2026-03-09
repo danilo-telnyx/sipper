@@ -13,7 +13,7 @@ export default defineConfig({
     outDir: 'dist',
   },
   server: {
-    port: 3000,
+    port: 8001,
     proxy: {
       '/api': {
         target: 'http://localhost:8000',
