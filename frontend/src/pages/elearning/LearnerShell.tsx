@@ -1,26 +1,27 @@
 /**
- * Learner Shell - Teal-themed learner interface with sidebar navigation
+ * Learner Shell - Integrated learner interface with all components
  * Complete isolation from admin mode - zero admin controls visible
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  BookOpen,
   GraduationCap,
-  Trophy,
-  BarChart3,
   LogOut,
   Menu,
   X,
-  CheckCircle2,
-  Clock,
-  Award,
 } from 'lucide-react';
 import { useRole } from '@/contexts/RoleContext';
 import { useELearning } from '@/contexts/ELearningContext';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+
+// Learner components
+import LearnerSidebar from './learner/LearnerSidebar';
+import ContentViewer from './learner/ContentViewer';
+import SectionQuiz from './learner/SectionQuiz';
+import FinalTest from './learner/FinalTest';
+import Certificate from './learner/Certificate';
+
+type View = 'content' | 'quiz' | 'final-test' | 'certificate';
 
 export default function LearnerShell() {
   const navigate = useNavigate();
