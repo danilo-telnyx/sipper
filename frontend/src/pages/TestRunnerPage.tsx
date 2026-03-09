@@ -61,10 +61,11 @@ export function TestRunnerPage() {
   // Run test mutation
   const runTestMutation = useMutation({
     mutationFn: (config: TestConfiguration) => testsApi.create(config),
-    onSuccess: (response) => {
+    onSuccess: (response: any) => {
       console.log('[TestRunner] Mutation onSuccess called with response:', response)
       
-      // API returns the test object directly, not wrapped in .data
+      // API returns the test object directly (not wrapped in ApiResponse)
+      // Try both response.id (direct) and response.data.id (wrapped) for compatibility
       const testId = response?.id || response?.data?.id
       
       if (testId) {
