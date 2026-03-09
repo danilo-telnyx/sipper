@@ -215,5 +215,5 @@ For issues related to this release:
 
 **Version:** 1.0.1  
 **Build Date:** March 9, 2026, 15:54 GMT+1  
-**Git Commit:** [To be added after commit]  
+**Git Commit:** `860254dbd6044b30b3274ca10e29dc9c6f77242f`  
 **Status:** ✅ DEPLOYED
