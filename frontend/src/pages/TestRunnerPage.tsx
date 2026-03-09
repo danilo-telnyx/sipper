@@ -62,8 +62,14 @@ export function TestRunnerPage() {
   const runTestMutation = useMutation({
     mutationFn: (config: TestConfiguration) => testsApi.create(config),
     onSuccess: (response) => {
-      if (response.data) {
-        setCurrentTestId(response.data.id)
+      console.log('[TestRunner] Mutation onSuccess called with response:', response)
+      
+      // API returns the test object directly, not wrapped in .data
+      const testId = response?.id || response?.data?.id
+      
+      if (testId) {
+        console.log('[TestRunner] Setting currentTestId:', testId)
+        setCurrentTestId(testId)
         setIsRunning(true)
         setTestCompleted(false)
         setTestSuccess(null)
@@ -72,6 +78,13 @@ export function TestRunnerPage() {
         toast({
           title: 'Test started',
           description: 'Your SIP test is now running...',
+        })
+      } else {
+        console.error('[TestRunner] No test ID in response:', response)
+        toast({
+          title: 'Error',
+          description: 'Test created but no ID returned',
+          variant: 'destructive',
         })
       }
     },
