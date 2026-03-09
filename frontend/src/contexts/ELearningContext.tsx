@@ -2,7 +2,8 @@
  * E-Learning Context - Global State Management
  * Manages course data, learner sessions, branching rules, and certificates
  */
-import React, { createContext, useContext, useReducer, ReactNode } from 'react';
+import React, { createContext, useContext, useReducer, useEffect, ReactNode } from 'react';
+import { completeSections, completeQuestions } from '@/data/completeContent';
 
 // ========================================
 // TYPE DEFINITIONS
@@ -355,6 +356,44 @@ interface ELearningProviderProps {
 
 export function ELearningProvider({ children }: ELearningProviderProps) {
   const [state, dispatch] = useReducer(elearningReducer, initialState);
+
+  // Initialize course data on mount
+  useEffect(() => {
+    if (state.courseData.sections.length === 0) {
+      // Map SectionContent to Section format
+      const mappedSections: Section[] = completeSections.map((section, index) => ({
+        id: section.id,
+        title: section.title,
+        content: section.content,
+        order: section.order || index + 1,
+        levelId: section.course_id || 'basic', // Map course_id to levelId
+      }));
+
+      // Map QuizQuestion to Question format
+      const mappedQuestions: Question[] = completeQuestions
+        .filter(q => q.is_active) // Only active questions
+        .map(q => ({
+          id: q.id,
+          text: q.question_text,
+          type: q.question_type.startsWith('mcq') ? 'multiple_choice' : 
+                q.question_type === 'true-false' ? 'true_false' : 'open_ended',
+          options: q.options,
+          correctAnswer: q.correct_answer,
+          levelId: 'basic', // Default to basic, could be derived from section
+          sectionId: q.section_id,
+          difficulty: (q.difficulty as 'easy' | 'medium' | 'hard') || 'medium',
+        }));
+
+      dispatch({
+        type: 'SET_COURSE_DATA',
+        payload: {
+          sections: mappedSections,
+          levels: initialState.courseData.levels,
+          questionBank: mappedQuestions,
+        },
+      });
+    }
+  }, []); // Run only once on mount
 
   // Helper functions
   const getSectionsByLevel = (levelId: string): Section[] => {
