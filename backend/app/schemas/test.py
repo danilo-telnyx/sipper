@@ -65,38 +65,37 @@ class TestRunCreate(TestRunBase):
     pass
 
 
-class TestRunResponse(TestRunBase):
+class TestRunResponse(BaseModel):
     """Test run response schema."""
     id: UUID
     organization_id: UUID
+    test_type: SIPTestType
+    credential_id: UUID | None
     status: str
     started_at: datetime
     completed_at: datetime | None
     created_by: UUID | None
-    metadata: dict = {}  # Map test_metadata from DB to metadata in response
+    metadata: dict = {}
     
-    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    model_config = ConfigDict(from_attributes=True)
     
     @classmethod
     def model_validate(cls, obj, **kwargs):
-        """Custom validator to handle test_metadata -> metadata mapping."""
-        if hasattr(obj, 'test_metadata'):
-            obj_dict = {
-                'id': obj.id,
-                'organization_id': obj.organization_id,
-                'test_type': obj.test_type,
-                'credential_id': obj.credential_id,
-                'ad_hoc_credentials': None,
-                'authenticated': obj.credential_id is not None,
-                'refer_params': None,
-                'recording_params': None,
-                'status': obj.status,
-                'started_at': obj.started_at,
-                'completed_at': obj.completed_at,
-                'created_by': obj.created_by,
-                'metadata': obj.test_metadata if isinstance(obj.test_metadata, dict) else {},
-            }
-            return super().model_validate(obj_dict, **kwargs)
+        """Custom validator to handle test_metadata -> metadata mapping from SQLAlchemy."""
+        # Handle SQLAlchemy model
+        if hasattr(obj, 'test_metadata') and hasattr(obj, '__tablename__'):
+            # Extract data from SQLAlchemy model, mapping test_metadata to metadata
+            return cls(
+                id=obj.id,
+                organization_id=obj.organization_id,
+                test_type=obj.test_type,
+                credential_id=obj.credential_id,
+                status=obj.status,
+                started_at=obj.started_at,
+                completed_at=obj.completed_at,
+                created_by=obj.created_by,
+                metadata=obj.test_metadata if isinstance(obj.test_metadata, dict) else {},
+            )
         return super().model_validate(obj, **kwargs)
 
 
