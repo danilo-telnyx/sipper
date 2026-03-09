@@ -52,25 +52,27 @@
 
 ---
 
-### Agent 2: Learner Experience 🟡 IN PROGRESS
+### Agent 2: Learner Experience ✅ COMPLETE
 **Label:** `sipper-elearning-2-learner`  
-**Status:** Running (spawned 12:30 GMT+1)  
-**Timeout:** 3 hours  
-**Responsibilities:**
-- Sidebar navigation with progress tracking
-- Content viewer (markdown, SIP blocks, callouts)
-- Section quiz component
-- Final test (timer, random questions, navigator)
-- Certificate generation
+**Completed:** 2026-03-09 12:44 GMT+1  
+**Runtime:** 12m59s  
+**Commits:** `e0b48f3`, `df47929`
 
 **Deliverables:**
-- [ ] LearnerSidebar.jsx
-- [ ] ContentViewer.jsx
-- [ ] SectionQuiz.jsx
-- [ ] FinalTest.jsx
-- [ ] Certificate.jsx
+- ✅ LearnerShell.tsx (integrated all components, session management)
+- ✅ LearnerSidebar.tsx (section tree, progress bars, quiz badges)
+- ✅ ContentViewer.tsx (markdown, SIP highlighting, callouts, RFC links)
+- ✅ SectionQuiz.tsx (interactive quiz, feedback, retry, 80% threshold)
+- ✅ FinalTest.tsx (modal exam, 30min timer, navigator, auto-submit)
+- ✅ Certificate.tsx (PDF generation with jsPDF, download, share)
+- ✅ Dependencies: jspdf (^2.5.2)
+- ✅ Build passing, TypeScript clean
 
-**Context Available:** ✅ Agent 1 architecture complete, Agent 5 content ready
+**Features:**
+- Complete learner flow: browse → quiz → pass → unlock next
+- Final test with random questions and timer
+- Certificate generation with PDF export
+- Teal theme (#00D4AA) maintained throughout
 
 ---
 
@@ -125,12 +127,12 @@
 |------------|--------|----------|-------|
 | Architecture | ✅ Complete | 100% | Commit 1eb6279, build passing |
 | Content Writing | 🟡 In Progress | 75% → 100% | L1/L2 done, L3 in progress |
-| Learner UI | 🟡 In Progress | 0% → TBD | Agent 2 running (timeout 3h) |
-| Admin Content | 🟡 In Progress | 0% → TBD | Agent 3 running (timeout 3h) |
+| Learner UI | ✅ Complete | 100% | Commits e0b48f3, df47929, all 5 components |
+| Admin Content | ❌ Failed | 0% | Terminated after 7m27s, needs restart |
 | Admin Dashboard | ✅ Complete | 100% | Commit 29bf9e1, 3 modules integrated |
 
-**Overall:** 55% complete → target 100% (3/5 agents complete, 3 still running)  
-**Execution Mode:** Autonomous - No user approval required
+**Overall:** 75% complete → target 100% (4/5 agents done, Agent 3 failed, Agent 5 in progress)  
+**Execution Mode:** Autonomous - Will restart Agent 3 after Agent 5 completes
 
 ---
 
