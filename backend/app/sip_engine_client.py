@@ -2,7 +2,6 @@
 import httpx
 import secrets
 from typing import Optional, Dict, Any
-from app.schemas import TestType
 from app.config import settings
 
 

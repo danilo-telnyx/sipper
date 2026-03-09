@@ -276,7 +276,7 @@ async def run_test(
         test_type=test_data.test_type,
         status="pending",
         created_by=current_user.id,
-        metadata=metadata
+        test_metadata=metadata
     )
     db.add(test_run)
     await db.commit()
