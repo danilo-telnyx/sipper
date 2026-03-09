@@ -1,7 +1,7 @@
 /**
  * E-Learning API Service
  */
-import apiClient from './apiClient';
+import apiClient from '../lib/axios';
 
 export interface Course {
   id: string;

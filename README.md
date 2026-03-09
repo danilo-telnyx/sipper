@@ -188,6 +188,32 @@ The application will **refuse to start** if weak/default secrets are detected.
   - Touch-friendly controls
   - Responsive breakpoints
 
+### 🎓 E-Learning Platform (v0.8.0)
+- ✅ **SIP Training Courses** — Comprehensive 3-level curriculum
+  - Basic: SIP fundamentals and protocol basics
+  - Intermediate: Advanced SIP features and call flows
+  - Advanced: Complex scenarios, troubleshooting, and RFC deep-dives
+- ✅ **Interactive Assessments** — Built-in quiz system
+  - 5-question quizzes every 3 sections (60% pass threshold)
+  - 15-question final exams per level (70% pass for certification)
+  - Immediate feedback with explanations
+- ✅ **Telnyx SIP Certification** — Auto-generated certificates
+  - Professional certificates issued on exam pass
+  - Download as PDF
+  - Certificate validation system
+- ✅ **Progress Tracking** — User learning dashboard
+  - Track completion across all courses
+  - Visual progress indicators
+  - Personal learning history
+- ✅ **Admin Course Management** — Full control for instructors
+  - Question bank CRUD operations
+  - User results and analytics
+  - Branched question flows
+  - Platform statistics dashboard
+  - Content organization tools
+
+**Access:** Navigate to "SIP Training" in the sidebar to start learning!
+
 ## 🌟 Telnyx Auto-Import
 
 Sipper can automatically import SIP credentials directly from your Telnyx account:
