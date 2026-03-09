@@ -137,13 +137,54 @@ export function TestRunnerPage() {
       }
     })
 
+    // FALLBACK: Poll test status if WebSocket isn't working
+    const pollInterval = setInterval(async () => {
+      if (!isRunning) return
+      
+      try {
+        const response = await fetch(`/api/tests/runs/${currentTestId}`, {
+          headers: {
+            'Authorization': `Bearer ${localStorage.getItem('token')}`
+          }
+        })
+        
+        if (response.ok) {
+          const testRun = await response.json()
+          
+          if (testRun.status === 'completed') {
+            setIsRunning(false)
+            setTestCompleted(true)
+            setTestSuccess(true)
+            clearInterval(pollInterval)
+            toast({
+              title: 'Test completed',
+              description: 'Your test has finished successfully!',
+            })
+          } else if (testRun.status === 'failed') {
+            setIsRunning(false)
+            setTestCompleted(true)
+            setTestSuccess(false)
+            clearInterval(pollInterval)
+            toast({
+              title: 'Test failed',
+              description: 'Test execution failed',
+              variant: 'destructive',
+            })
+          }
+        }
+      } catch (error) {
+        console.error('Error polling test status:', error)
+      }
+    }, 2000) // Poll every 2 seconds
+
     return () => {
       unsubscribeProgress()
       unsubscribeLogs()
       unsubscribeCompleted()
       unsubscribeFailed()
+      clearInterval(pollInterval)
     }
-  }, [currentTestId, toast])
+  }, [currentTestId, toast, isRunning])
 
   // Elapsed time counter
   useEffect(() => {

@@ -329,6 +329,29 @@ async def get_test_run(
     return test_run
 
 
+@router.get("/runs/{test_run_id}", response_model=TestRunResponse)
+async def get_test_run(
+    test_run_id: UUID,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_active_user)
+):
+    """
+    Get test run status by ID.
+    Allows frontend to poll for test completion.
+    """
+    result = await db.execute(
+        select(TestRun)
+        .where(TestRun.id == test_run_id)
+        .where(TestRun.organization_id == current_user.organization_id)
+    )
+    test_run = result.scalar_one_or_none()
+    
+    if not test_run:
+        raise HTTPException(status_code=404, detail="Test run not found")
+    
+    return test_run
+
+
 @router.get("/results/{test_run_id}", response_model=list[TestResultResponse])
 async def get_test_results(
     test_run_id: UUID,
