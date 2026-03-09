@@ -103,18 +103,24 @@ export function TestRunnerPage() {
   useEffect(() => {
     if (!currentTestId) return
 
+    console.log('[TestRunner] Setting up WebSocket subscriptions for test:', currentTestId)
+
     const unsubscribeProgress = wsService.subscribeToTest(currentTestId, (data) => {
+      console.log('[TestRunner] WebSocket progress update:', data)
       setProgress(data)
     })
 
     const unsubscribeLogs = wsService.onTestLog((log) => {
+      console.log('[TestRunner] WebSocket log:', log)
       if (log.timestamp) {
         setLogs((prev) => [...prev, log])
       }
     })
 
     const unsubscribeCompleted = wsService.onTestCompleted((data) => {
+      console.log('[TestRunner] WebSocket completed event:', data)
       if (data.testId === currentTestId) {
+        console.log('[TestRunner] Test completed via WebSocket!')
         setIsRunning(false)
         setTestCompleted(true)
         setTestSuccess(true)
@@ -122,11 +128,15 @@ export function TestRunnerPage() {
           title: 'Test completed',
           description: 'Your test has finished successfully!',
         })
+      } else {
+        console.log('[TestRunner] Completed event for different test, ignoring')
       }
     })
 
     const unsubscribeFailed = wsService.onTestFailed((data) => {
+      console.log('[TestRunner] WebSocket failed event:', data)
       if (data.testId === currentTestId) {
+        console.log('[TestRunner] Test failed via WebSocket!')
         setIsRunning(false)
         setTestCompleted(true)
         setTestSuccess(false)
@@ -135,14 +145,22 @@ export function TestRunnerPage() {
           description: data.error,
           variant: 'destructive',
         })
+      } else {
+        console.log('[TestRunner] Failed event for different test, ignoring')
       }
     })
 
     // FALLBACK: Poll test status if WebSocket isn't working
+    console.log('[TestRunner] Starting poll interval for test:', currentTestId)
     const pollInterval = setInterval(async () => {
-      if (!isRunning) return
+      console.log('[TestRunner] Poll tick - isRunning:', isRunning)
+      if (!isRunning) {
+        console.log('[TestRunner] Poll skipped - test not running')
+        return
+      }
       
       try {
+        console.log('[TestRunner] Polling test status for:', currentTestId)
         const token = useAuthStore.getState().token
         const response = await fetch(`/api/tests/runs/${currentTestId}`, {
           headers: {
@@ -150,10 +168,15 @@ export function TestRunnerPage() {
           }
         })
         
+        console.log('[TestRunner] Poll response status:', response.status)
+        
         if (response.ok) {
           const testRun = await response.json()
+          console.log('[TestRunner] Poll response data:', testRun)
+          console.log('[TestRunner] Test status:', testRun.status)
           
           if (testRun.status === 'completed') {
+            console.log('[TestRunner] Test completed! Updating UI')
             setIsRunning(false)
             setTestCompleted(true)
             setTestSuccess(true)
@@ -163,6 +186,7 @@ export function TestRunnerPage() {
               description: 'Your test has finished successfully!',
             })
           } else if (testRun.status === 'failed') {
+            console.log('[TestRunner] Test failed! Updating UI')
             setIsRunning(false)
             setTestCompleted(true)
             setTestSuccess(false)
@@ -172,10 +196,14 @@ export function TestRunnerPage() {
               description: 'Test execution failed',
               variant: 'destructive',
             })
+          } else {
+            console.log('[TestRunner] Test still running, status:', testRun.status)
           }
+        } else {
+          console.error('[TestRunner] Poll response not OK:', response.status, response.statusText)
         }
       } catch (error) {
-        console.error('Error polling test status:', error)
+        console.error('[TestRunner] Error polling test status:', error)
       }
     }, 2000) // Poll every 2 seconds
 
