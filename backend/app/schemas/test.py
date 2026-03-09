@@ -73,8 +73,31 @@ class TestRunResponse(TestRunBase):
     started_at: datetime
     completed_at: datetime | None
     created_by: UUID | None
+    metadata: dict = {}  # Map test_metadata from DB to metadata in response
     
-    model_config = ConfigDict(from_attributes=True)
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    
+    @classmethod
+    def model_validate(cls, obj, **kwargs):
+        """Custom validator to handle test_metadata -> metadata mapping."""
+        if hasattr(obj, 'test_metadata'):
+            obj_dict = {
+                'id': obj.id,
+                'organization_id': obj.organization_id,
+                'test_type': obj.test_type,
+                'credential_id': obj.credential_id,
+                'ad_hoc_credentials': None,
+                'authenticated': obj.credential_id is not None,
+                'refer_params': None,
+                'recording_params': None,
+                'status': obj.status,
+                'started_at': obj.started_at,
+                'completed_at': obj.completed_at,
+                'created_by': obj.created_by,
+                'metadata': obj.test_metadata if isinstance(obj.test_metadata, dict) else {},
+            }
+            return super().model_validate(obj_dict, **kwargs)
+        return super().model_validate(obj, **kwargs)
 
 
 class TestResultResponse(BaseModel):
