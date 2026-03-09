@@ -2,6 +2,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 from typing import List
 from uuid import UUID
 
@@ -108,7 +109,9 @@ async def get_course(
 ):
     """Get course with all sections."""
     result = await db.execute(
-        select(Course).where(Course.id == course_id)
+        select(Course)
+        .options(selectinload(Course.sections))
+        .where(Course.id == course_id)
     )
     course = result.scalar_one_or_none()
     
