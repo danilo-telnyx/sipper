@@ -316,9 +316,27 @@ export const testsApi = {
         startedAt: test.started_at,
         completedAt: test.completed_at,
         duration: Math.round(duration / 1000), // Convert to seconds
+        success: test.status === 'completed', // Add success field
         score: test.status === 'completed' ? 100 : 0, // TODO: Calculate actual score from results
         organizationId: test.organization_id,
-        metadata: test.test_metadata || {}
+        userId: test.created_by || '',
+        metadata: test.test_metadata || {},
+        // Add placeholder fields expected by TestResult type
+        details: {
+          summary: test.test_metadata?.summary || '',
+          successRate: test.status === 'completed' ? 100 : 0,
+          totalRequests: 1,
+          successfulRequests: test.status === 'completed' ? 1 : 0,
+          failedRequests: test.status === 'failed' ? 1 : 0,
+          averageLatency: 0,
+          maxLatency: 0,
+          minLatency: 0,
+          errors: [],
+          warnings: []
+        },
+        rfcCompliance: [],
+        timings: [],
+        logs: []
       }
     })
     
@@ -405,23 +423,47 @@ export const testsApi = {
         success: test.status === 'completed',
         logs: results.map((r: any) => ({
           timestamp: r.timestamp,
-          level: r.status === 'error' ? 'error' : r.status === 'warning' ? 'warn' : 'info',
+          level: r.status === 'error' ? 'error' as const : r.status === 'warning' ? 'warn' as const : 'info' as const,
           message: r.message || r.step_name,
-          source: r.step_name
+          sipMessage: r.details?.message || undefined
         })),
-        details: results.find((r: any) => r.step_name === 'summary')?.details || {},
-        rfcCompliance: results.filter((r: any) => r.step_name === 'rfc_violation' || r.status === 'error').map((r: any) => ({
-          rule: r.step_name || 'Unknown',
-          passed: r.status !== 'error',
-          message: r.message || '',
-          details: r.details || {}
+        details: {
+          summary: test.test_metadata?.summary || 'SIP test execution',
+          successRate: test.status === 'completed' ? 100 : 0,
+          totalRequests: sipMessages.filter((m: any) => m.direction === 'sent').length,
+          successfulRequests: test.status === 'completed' ? sipMessages.filter((m: any) => m.direction === 'sent').length : 0,
+          failedRequests: test.status === 'failed' ? sipMessages.filter((m: any) => m.direction === 'sent').length : 0,
+          averageLatency: 0,
+          maxLatency: 0,
+          minLatency: 0,
+          errors: results.filter((r: any) => r.status === 'error').map((r: any) => ({
+            code: r.step_name,
+            message: r.message || '',
+            timestamp: r.timestamp,
+            sipResponse: r.details?.message || undefined
+          })),
+          warnings: results.filter((r: any) => r.status === 'warning').map((r: any) => ({
+            code: r.step_name,
+            message: r.message || '',
+            timestamp: r.timestamp
+          }))
+        },
+        rfcCompliance: results.filter((r: any) => r.step_name === 'rfc_violation').map((r: any) => ({
+          rfc: r.details?.rfc || 'RFC 3261',
+          section: r.details?.section || '',
+          requirement: r.details?.requirement || r.message || '',
+          compliant: r.status !== 'error',
+          details: r.message || '',
+          severity: r.status === 'error' ? 'critical' as const : 'warning' as const
         })),
-        timings: [
-          { phase: 'dns', duration: 0 },
-          { phase: 'connect', duration: 0 },
-          { phase: 'tls', duration: 0 },
-          { phase: 'total', duration: Math.round(duration / 1000) }
-        ],
+        timings: results
+          .filter((r: any) => r.step_name.includes('timing') || r.step_name.startsWith('out_') || r.step_name.startsWith('in_'))
+          .map((r: any) => ({
+            timestamp: r.timestamp,
+            event: r.step_name,
+            duration: r.details?.duration || 0,
+            success: r.status !== 'error'
+          })),
         networkStats: {
           packetsSent: sipMessages.filter((m: any) => m.direction === 'sent').length,
           packetsReceived: sipMessages.filter((m: any) => m.direction === 'received').length,
