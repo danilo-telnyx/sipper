@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
+import { useAuthStore } from '../store/auth'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/ui/button'
@@ -142,9 +143,10 @@ export function TestRunnerPage() {
       if (!isRunning) return
       
       try {
+        const token = useAuthStore.getState().token
         const response = await fetch(`/api/tests/runs/${currentTestId}`, {
           headers: {
-            'Authorization': `Bearer ${localStorage.getItem('token')}`
+            'Authorization': `Bearer ${token}`
           }
         })
         
