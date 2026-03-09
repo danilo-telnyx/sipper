@@ -397,10 +397,18 @@ export const testsApi = {
         duration: Math.round(duration / 1000),
         score: test.status === 'completed' ? 100 : 0,
         organizationId: test.organization_id,
+        userId: test.created_by || '',
         metadata: test.test_metadata || {},
         sipMessages, // Add SIP messages
         testResults: results, // Add raw test results
         // Add missing fields from TestResult type
+        success: test.status === 'completed',
+        logs: results.map((r: any) => ({
+          timestamp: r.timestamp,
+          level: r.status === 'error' ? 'error' : r.status === 'warning' ? 'warn' : 'info',
+          message: r.message || r.step_name,
+          source: r.step_name
+        })),
         details: results.find((r: any) => r.step_name === 'summary')?.details || {},
         rfcCompliance: {
           passed: [],
