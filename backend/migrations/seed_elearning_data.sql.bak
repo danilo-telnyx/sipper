@@ -1,0 +1,209 @@
+-- Seed E-Learning Data
+-- Creates 3 courses with sample sections and questions
+
+-- Basic SIP Course
+INSERT INTO courses (id, level, title, description, "order", is_active, created_at, updated_at)
+VALUES 
+  ('10000000-0000-0000-0000-000000000001', 'basic', 'SIP Fundamentals', 'Learn the basics of the Session Initiation Protocol', 1, true, NOW(), NOW());
+
+-- Intermediate SIP Course  
+INSERT INTO courses (id, level, title, description, "order", is_active, created_at, updated_at)
+VALUES 
+  ('10000000-0000-0000-0000-000000000002', 'intermediate', 'Advanced SIP Features', 'Deep dive into SIP call flows and advanced features', 2, true, NOW(), NOW());
+
+-- Advanced SIP Course
+INSERT INTO courses (id, level, title, description, "order", is_active, created_at, updated_at)
+VALUES 
+  ('10000000-0000-0000-0000-000000000003', 'advanced', 'SIP Troubleshooting & RFC Compliance', 'Master SIP debugging and RFC 3261 compliance', 3, true, NOW(), NOW());
+
+-- Sample sections for Basic course
+INSERT INTO sections (id, course_id, title, content, "order", created_at, updated_at)
+VALUES
+  ('s0001000-0000-0000-0000-000000000001', 'b0001000-0000-0000-0000-000000000001', 'What is SIP?', 
+   '# Introduction to SIP
+
+SIP (Session Initiation Protocol) is an application-layer signaling protocol used for initiating, maintaining, and terminating real-time sessions that include voice, video and messaging applications.
+
+## Key Features
+- Text-based protocol
+- Similar to HTTP
+- Uses request/response transactions
+- Defined in RFC 3261', 
+   1, NOW(), NOW()),
+  
+  ('s0001000-0000-0000-0000-000000000002', 'b0001000-0000-0000-0000-000000000001', 'SIP Messages', 
+   '# SIP Message Structure
+
+SIP messages consist of:
+
+1. **Start Line** - Request line or Status line
+2. **Headers** - Metadata about the message
+3. **Body** - Optional message content (SDP)
+
+## Example INVITE
+```
+INVITE sip:bob@biloxi.com SIP/2.0
+Via: SIP/2.0/UDP pc33.atlanta.com
+From: Alice <sip:alice@atlanta.com>
+To: Bob <sip:bob@biloxi.com>
+Call-ID: abc123@atlanta.com
+CSeq: 1 INVITE
+```', 
+   2, NOW(), NOW()),
+  
+  ('s0001000-0000-0000-0000-000000000003', 'b0001000-0000-0000-0000-000000000001', 'SIP Methods', 
+   '# SIP Request Methods
+
+- **INVITE** - Initiates a session
+- **ACK** - Confirms final response to INVITE
+- **BYE** - Terminates a session
+- **CANCEL** - Cancels pending request
+- **REGISTER** - Registers user location
+- **OPTIONS** - Queries capabilities', 
+   3, NOW(), NOW());
+
+-- Quiz questions (is_exam_question = false)
+INSERT INTO questions (id, course_id, question_text, question_type, options, correct_answer, explanation, is_exam_question, "order", created_at, updated_at)
+VALUES
+  ('q0001000-0000-0000-0000-000000000001', 'b0001000-0000-0000-0000-000000000001', 
+   'What does SIP stand for?', 'multiple_choice',
+   '["Session Initiation Protocol", "Simple Internet Protocol", "Secure IP Protocol", "Standard Invitation Protocol"]',
+   'Session Initiation Protocol',
+   'SIP stands for Session Initiation Protocol, defined in RFC 3261.',
+   false, 1, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000002', 'b0001000-0000-0000-0000-000000000001', 
+   'Which SIP method is used to initiate a call?', 'multiple_choice',
+   '["INVITE", "REGISTER", "OPTIONS", "BYE"]',
+   'INVITE',
+   'INVITE is used to establish a session (initiate a call).',
+   false, 2, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000003', 'b0001000-0000-0000-0000-000000000001', 
+   'Is SIP a text-based protocol?', 'true_false',
+   '["True", "False"]',
+   'True',
+   'SIP is a text-based protocol similar to HTTP.',
+   false, 3, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000004', 'b0001000-0000-0000-0000-000000000001', 
+   'Which header contains the transaction sequence number?', 'multiple_choice',
+   '["CSeq", "Via", "Call-ID", "From"]',
+   'CSeq',
+   'CSeq (Command Sequence) contains the transaction sequence number and method.',
+   false, 4, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000005', 'b0001000-0000-0000-0000-000000000001', 
+   'What does ACK stand for in SIP?', 'multiple_choice',
+   '["Acknowledgment", "Action", "Accept", "Authorize"]',
+   'Acknowledgment',
+   'ACK is an acknowledgment sent after receiving a final response to INVITE.',
+   false, 5, NOW(), NOW());
+
+-- Exam questions (is_exam_question = true)
+INSERT INTO questions (id, course_id, question_text, question_type, options, correct_answer, explanation, is_exam_question, "order", created_at, updated_at)
+VALUES
+  ('q0001000-0000-0000-0000-000000000011', 'b0001000-0000-0000-0000-000000000001', 
+   'Which RFC defines SIP?', 'multiple_choice',
+   '["RFC 3261", "RFC 2543", "RFC 3550", "RFC 2616"]',
+   'RFC 3261',
+   'RFC 3261 is the current specification for SIP.',
+   true, 11, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000012', 'b0001000-0000-0000-0000-000000000001', 
+   'SIP uses which transport protocols?', 'multiple_choice',
+   '["UDP, TCP, TLS", "Only TCP", "Only UDP", "HTTP/HTTPS"]',
+   'UDP, TCP, TLS',
+   'SIP can run over UDP, TCP, and TLS for security.',
+   true, 12, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000013', 'b0001000-0000-0000-0000-000000000001', 
+   'What is the default SIP port for UDP?', 'multiple_choice',
+   '["5060", "5061", "8080", "80"]',
+   '5060',
+   'SIP default port is 5060 (5061 for TLS).',
+   true, 13, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000014', 'b0001000-0000-0000-0000-000000000001', 
+   'Which method terminates a SIP session?', 'multiple_choice',
+   '["BYE", "CANCEL", "INVITE", "ACK"]',
+   'BYE',
+   'BYE is used to terminate an established session.',
+   true, 14, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000015', 'b0001000-0000-0000-0000-000000000001', 
+   'Can SIP carry video calls?', 'true_false',
+   '["True", "False"]',
+   'True',
+   'SIP can establish multimedia sessions including voice, video, and messaging.',
+   true, 15, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000016', 'b0001000-0000-0000-0000-000000000001', 
+   'What does REGISTER method do?', 'multiple_choice',
+   '["Registers user location with server", "Initiates a call", "Terminates a call", "Queries server capabilities"]',
+   'Registers user location with server',
+   'REGISTER binds a SIP URI to a physical location.',
+   true, 16, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000017', 'b0001000-0000-0000-0000-000000000001', 
+   'Which header uniquely identifies a call?', 'multiple_choice',
+   '["Call-ID", "From", "To", "CSeq"]',
+   'Call-ID',
+   'Call-ID uniquely identifies a SIP dialog.',
+   true, 17, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000018', 'b0001000-0000-0000-0000-000000000001', 
+   'What is SDP used for in SIP?', 'multiple_choice',
+   '["Media negotiation", "Authentication", "Routing", "Registration"]',
+   'Media negotiation',
+   'SDP (Session Description Protocol) describes media parameters.',
+   true, 18, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000019', 'b0001000-0000-0000-0000-000000000001', 
+   'Which response code indicates success?', 'multiple_choice',
+   '["200 OK", "100 Trying", "404 Not Found", "486 Busy Here"]',
+   '200 OK',
+   '200 OK indicates successful completion of a request.',
+   true, 19, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000020', 'b0001000-0000-0000-0000-000000000001', 
+   'SIP is similar to which protocol?', 'multiple_choice',
+   '["HTTP", "FTP", "SMTP", "DNS"]',
+   'HTTP',
+   'SIP uses a request/response model similar to HTTP.',
+   true, 20, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000021', 'b0001000-0000-0000-0000-000000000001', 
+   'What does OPTIONS method query?', 'multiple_choice',
+   '["Server capabilities", "User location", "Call state", "Media types"]',
+   'Server capabilities',
+   'OPTIONS queries the capabilities of a SIP server or user agent.',
+   true, 21, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000022', 'b0001000-0000-0000-0000-000000000001', 
+   'Which header shows the path of the request?', 'multiple_choice',
+   '["Via", "Route", "From", "To"]',
+   'Via',
+   'Via header shows the path taken by the request and is used for responses.',
+   true, 22, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000023', 'b0001000-0000-0000-0000-000000000001', 
+   'Is CANCEL used to end an established call?', 'true_false',
+   '["False", "True"]',
+   'False',
+   'CANCEL cancels a pending INVITE, not an established call. Use BYE to end established calls.',
+   true, 23, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000024', 'b0001000-0000-0000-0000-000000000001', 
+   'What response class indicates provisional responses?', 'multiple_choice',
+   '["1xx", "2xx", "3xx", "4xx"]',
+   '1xx',
+   '1xx responses are provisional (e.g., 100 Trying, 180 Ringing).',
+   true, 24, NOW(), NOW()),
+  
+  ('q0001000-0000-0000-0000-000000000025', 'b0001000-0000-0000-0000-000000000001', 
+   'Which header field identifies the caller?', 'multiple_choice',
+   '["From", "To", "Call-ID", "Contact"]',
+   'From',
+   'From header identifies the initiator of the request.',
+   true, 25, NOW(), NOW());
