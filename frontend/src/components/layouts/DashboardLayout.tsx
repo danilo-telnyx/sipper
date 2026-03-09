@@ -99,7 +99,7 @@ export function DashboardLayout() {
     { path: '/credentials', icon: Key, label: 'Credentials' },
     { path: '/test-runner', icon: Play, label: 'Test Runner' },
     { path: '/test-results', icon: FileText, label: 'Test Results' },
-    { path: '/elearning/courses', icon: GraduationCap, label: 'SIP Training' },
+    { path: '/elearning', icon: GraduationCap, label: 'SIP Training' },
     ...(user?.role === 'admin' || user?.role === 'org-admin'
       ? [{ path: '/users', icon: Users, label: 'Users' }]
       : []),
