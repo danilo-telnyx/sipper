@@ -172,7 +172,7 @@ export default function LearnerShell() {
   const currentIndex = sections.findIndex((s) => s.id === currentSectionId);
   const hasPrevious = currentIndex > 0;
   const hasNext = currentIndex < sections.length - 1;
-  const isQuizCompleted = session?.completedSections.includes(currentSectionId || '') || false;
+  const isQuizCompleted = session?.completedSections?.includes(currentSectionId || '') || false;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-teal-50 to-cyan-50">

@@ -61,9 +61,10 @@ async def execute_sip_test(test_run_id: UUID):
             # Build credentials payload
             credentials = None
             if credential:
+                from app.utils import decrypt_credential
                 credentials = {
                     "username": credential.username,
-                    "password": credential.password,
+                    "password": decrypt_credential(credential.password_encrypted),
                     "host": credential.sip_domain,
                     "domain": credential.sip_domain,
                     "port": credential.port or 5060
