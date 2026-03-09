@@ -344,10 +344,11 @@ export class SIPMessageBuilder {
       nonce,
       uri,
       method,
-      qop = 'auth',
+      qop = null,  // Don't default to 'auth' - use null if not provided
       nc = '00000001',
       cnonce = crypto.randomBytes(8).toString('hex'),
-      algorithm = 'MD5'
+      algorithm = 'MD5',
+      opaque = null
     } = params;
 
     const ha1 = crypto.createHash('md5').update(`${username}:${realm}:${password}`).digest('hex');
@@ -366,6 +367,10 @@ export class SIPMessageBuilder {
     
     if (qop) {
       authHeader += `, qop=${qop}, nc=${nc}, cnonce="${cnonce}"`;
+    }
+
+    if (opaque) {
+      authHeader += `, opaque="${opaque}"`;
     }
 
     return authHeader;

@@ -178,7 +178,9 @@ export class SIPTestEngine {
               nonce: authParams.nonce,
               uri: `sip:${endpoint.domain}`,
               method: 'REGISTER',
-              qop: authParams.qop
+              qop: authParams.qop || null,  // Explicitly pass null if not provided
+              opaque: authParams.opaque || null,
+              algorithm: authParams.algorithm || 'MD5'
             });
 
             const { message: authMessage } = this.builder.buildREGISTER({
