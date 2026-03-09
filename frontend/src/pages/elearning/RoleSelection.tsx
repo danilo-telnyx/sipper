@@ -2,10 +2,11 @@
  * Role Selection Page
  * Entry point for dual-persona e-learning system
  */
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { GraduationCap, Shield, User, BookOpen } from 'lucide-react';
 import { useRole } from '@/contexts/RoleContext';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -21,9 +22,21 @@ import {
 export default function RoleSelection() {
   const navigate = useNavigate();
   const { setRole, authenticateAdmin } = useRole();
+  const { user } = useAuth();
   const [showAdminDialog, setShowAdminDialog] = useState(false);
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
+
+  // Check if user is admin
+  const isAdmin = user?.role === 'admin' || user?.role === 'org-admin';
+
+  // Auto-redirect non-admin users to learner view
+  useEffect(() => {
+    if (user && !isAdmin) {
+      setRole('learner');
+      navigate('/elearning/learner');
+    }
+  }, [user, isAdmin, setRole, navigate]);
 
   const handleStartLearning = () => {
     setRole('learner');
@@ -66,7 +79,7 @@ export default function RoleSelection() {
         </div>
 
         {/* Role Selection Cards */}
-        <div className="grid md:grid-cols-2 gap-8">
+        <div className={`grid ${isAdmin ? 'md:grid-cols-2' : 'md:grid-cols-1 max-w-2xl mx-auto'} gap-8`}>
           {/* Learner Card */}
           <Card className="group hover:shadow-2xl transition-all duration-300 border-2 hover:border-teal-500 cursor-pointer">
             <div className="p-8" onClick={handleStartLearning}>
@@ -111,8 +124,9 @@ export default function RoleSelection() {
             </div>
           </Card>
 
-          {/* Admin Card */}
-          <Card className="group hover:shadow-2xl transition-all duration-300 border-2 hover:border-purple-500 cursor-pointer">
+          {/* Admin Card - Only visible to admins */}
+          {isAdmin && (
+            <Card className="group hover:shadow-2xl transition-all duration-300 border-2 hover:border-purple-500 cursor-pointer">
             <div className="p-8" onClick={handleAdminLogin}>
               <div className="flex flex-col items-center text-center space-y-6">
                 <div className="p-6 bg-purple-100 rounded-full group-hover:bg-purple-500 transition-colors duration-300">
@@ -154,6 +168,7 @@ export default function RoleSelection() {
               </div>
             </div>
           </Card>
+          )}
         </div>
 
         {/* Footer */}
